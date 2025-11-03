@@ -1,5 +1,5 @@
 import { GoogleDriveService } from "./GoogleDriveService";
-import type { GoogleCredentials, TokenData } from "./types";
+import type { GoogleCredentials, TokenData } from "../types";
 import fs from "fs";
 // Load credentials from credentials.json
 const credentials: GoogleCredentials = JSON.parse(

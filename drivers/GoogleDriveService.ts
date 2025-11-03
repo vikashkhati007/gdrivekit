@@ -10,7 +10,7 @@ import type {
     ApiResponse,
     FileMetadata,
     ListFilesResponse
-} from './types';
+} from '../types';
 
 export class GoogleDriveService {
   private oauth2Client: Auth.OAuth2Client;
