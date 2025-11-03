@@ -1,5 +1,5 @@
-import { driveService } from './drivers/driveService';
-import { MIME_TYPES } from './types/index';
+import { driveService } from '../drivers/driveService';
+import { MIME_TYPES } from '../types/index';
 
 // ============================================
 // FILE OPERATIONS

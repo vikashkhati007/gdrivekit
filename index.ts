@@ -1,12 +1,12 @@
-import { driveOperations } from "./operations";
+import { driveOperations } from "./operations/operations";
 
 async function main(): Promise<void> {
   try {
     // const result = await driveOperations.searchByName('uploaded');
     // console.log(result.data?.files);
-    const filePath = './test.txt';
-    const fileName = 'uploaded.txt';
-    const result = await driveOperations.uploadFile(filePath, { fileName });
+    const fileName = 'test.txt';
+    const folderName = 'Icons';
+    const result = await driveOperations.searchByName(fileName);
     console.log(result);
 
   } catch (error) {
