@@ -58,8 +58,7 @@ After that, you **don’t need to call it again** unless you delete your tokens 
 Once tokens are generated, you can initialize the Google Drive service and perform file operations:
 
 ```ts
-import { operations } from "gdrivekit";
-import { initDriveService } from "./drivers/services";
+import { operations, initDriveService } from "gdrivekit";
 
 async function main() {
   initDriveService();
