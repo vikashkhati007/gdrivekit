@@ -1,24 +1,56 @@
-import { google } from 'googleapis';
-import * as http from 'http';
-import * as url from 'url';
-import * as fs from 'fs';
-import type { GoogleCredentials, TokenData } from './types';
-import createCredentialsJson from './crediantialsGenerator';
+import { google } from "googleapis";
+import * as fs from "fs";
+import * as http from "http";
+import * as url from "url";
+import type { CredentialsFileParams, GoogleCredentials, WebCredentials, InstalledCredentials, TokenData } from "./types";
 
-export async function getAccessToken(): Promise<TokenData> {
-  // Create Credentials.json file
-  createCredentialsJson();
-  
+const CREDENTIALS_PATH = "./credentials.json";
+const TOKENS_PATH = "./tokens.json";
+
+export async function generateCredentialsAndTokens({
+  clientid,
+  projectid,
+  clientsecret,
+  redirecturis = [
+    "http://localhost:3000/oauth2callback",
+    "http://localhost:3000/oauth2/callback",
+  ],
+}: CredentialsFileParams) {
+  // =====================================
+  // 1️⃣ CREATE CREDENTIALS.JSON IF MISSING
+  // =====================================
+  if (!fs.existsSync(CREDENTIALS_PATH)) {
+    const baseCredentials = {
+      web: {
+        client_id: clientid!,
+        project_id: projectid!,
+        auth_uri: "https://accounts.google.com/o/oauth2/auth",
+        token_uri: "https://oauth2.googleapis.com/token",
+        auth_provider_x509_cert_url: "https://www.googleapis.com/oauth2/v1/certs",
+        client_secret: clientsecret!,
+        redirect_uris: redirecturis,
+        javascript_origins: ["http://localhost:3000"],
+      },
+    };
+    fs.writeFileSync(CREDENTIALS_PATH, JSON.stringify(baseCredentials, null, 2));
+    console.log("✅ Created credentials.json");
+  }
+
+  // =====================================
+  // 2️⃣ READ CREDENTIALS
+  // =====================================
   const credentials: GoogleCredentials = JSON.parse(
-    fs.readFileSync('./credentials.json', 'utf-8')
+    fs.readFileSync(CREDENTIALS_PATH, "utf-8")
   );
-  
-  // Handle the web credentials format from Google Cloud Console
   const creds = credentials.web || credentials.installed || credentials;
-  const { client_id, client_secret } = creds;
-  const redirect_uri = 'redirect_uris' in creds 
-    ? creds.redirect_uris[0] 
-    : (credentials as any).redirect_uri;
+
+  const client_id = creds.client_id;
+  const client_secret = creds.client_secret;
+  const redirect_uri = Array.isArray(
+    (creds as WebCredentials | InstalledCredentials).redirect_uris
+  )
+    ? (creds as WebCredentials | InstalledCredentials).redirect_uris[0]
+    : (creds as GoogleCredentials).redirect_uri;
 
   const oauth2Client = new google.auth.OAuth2(
     client_id,
@@ -26,73 +58,90 @@ export async function getAccessToken(): Promise<TokenData> {
     redirect_uri
   );
 
+  // =====================================
+  // 3️⃣ REUSE EXISTING TOKENS IF PRESENT
+  // =====================================
+  if (fs.existsSync(TOKENS_PATH)) {
+    const tokens = JSON.parse(fs.readFileSync(TOKENS_PATH, "utf-8"));
+    oauth2Client.setCredentials(tokens);
+    console.log("✅ Using existing tokens from tokens.json");
+    return oauth2Client;
+  }
+
+  // =====================================
+  // 4️⃣ START NEW AUTH FLOW
+  // =====================================
   const scopes = [
-    'https://www.googleapis.com/auth/drive',
-    'https://www.googleapis.com/auth/drive.file'
+    "https://www.googleapis.com/auth/drive",
+    "https://www.googleapis.com/auth/drive.file",
   ];
 
   const authUrl = oauth2Client.generateAuthUrl({
-    access_type: 'offline',
+    access_type: "offline",
     scope: scopes,
-    prompt: 'consent' // Force to get refresh token
+    prompt: "consent",
   });
 
-  console.log('\n==================================');
-  console.log('Authorize this app by visiting:');
-  console.log(authUrl);
-  console.log('==================================\n');
+  console.log("\n🌐 Authorize this app by visiting this URL:\n", authUrl, "\n");
 
   return new Promise((resolve, reject) => {
+    const connections = new Set<any>();
+    
     const server = http.createServer(async (req, res) => {
       try {
-        if (req.url && req.url.indexOf('/oauth2callback') > -1) {
+        if (req.url && req.url.includes("/oauth2callback")) {
           const qs = new url.URL(req.url, redirect_uri).searchParams;
-          const code = qs.get('code');
-          
-          if (!code) {
-            throw new Error('No authorization code received');
-          }
-          
-          res.writeHead(200, { 'Content-Type': 'text/html' });
+          const code = qs.get("code");
+          if (!code) throw new Error("No authorization code received");
+
+          const { tokens } = await oauth2Client.getToken(code);
+          oauth2Client.setCredentials(tokens);
+          fs.writeFileSync(TOKENS_PATH, JSON.stringify(tokens, null, 2));
+
+          console.log("✅ Tokens saved to tokens.json");
+
+          res.writeHead(200, { "Content-Type": "text/html" });
           res.end(`
             <html>
               <body>
-                <h1>Authentication successful! ✅</h1>
+                <h1>✅ Authentication successful!</h1>
                 <p>You can close this window and return to your terminal.</p>
                 <script>window.close();</script>
               </body>
             </html>
           `);
           
-          server.close();
+          // Destroy all active connections and close the server
+          connections.forEach((socket) => socket.destroy());
+          server.close(() => {
+            console.log("🔒 Server closed");
+          });
 
-          const { tokens } = await oauth2Client.getToken(code);
-          fs.writeFileSync('./tokens.json', JSON.stringify(tokens, null, 2));
-          
-          console.log('\n✅ Tokens saved to tokens.json');
-          console.log('You can now run: npm start\n');
-          resolve(tokens as TokenData);
+          resolve(oauth2Client);
         }
-      } catch (error) {
-        reject(error);
+      } catch (err) {
+        connections.forEach((socket) => socket.destroy());
+        server.close();
+        reject(err);
       }
-    }).listen(3000, () => {
-      console.log('🚀 Waiting for authentication on http://localhost:3000');
     });
 
-    // Handle server errors
-    server.on('error', (error: Error) => {
-      reject(error);
+    // Track all connections
+    server.on("connection", (socket) => {
+      connections.add(socket);
+      socket.on("close", () => {
+        connections.delete(socket);
+      });
+    });
+
+    server.listen(3000, () => {
+      console.log("🚀 Waiting for authentication on http://localhost:3000");
+    });
+
+    server.on("error", (err) => {
+      connections.forEach((socket) => socket.destroy());
+      server.close();
+      reject(err);
     });
   });
-}
-
-// Run if this is the main module
-if (require.main === module) {
-  getAccessToken()
-    .then(() => process.exit(0))
-    .catch((error: Error) => {
-      console.error('Authentication error:', error.message);
-      process.exit(1);
-    });
 }

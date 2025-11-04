@@ -1,4 +1,4 @@
-import { driveService } from './drivers/driveService';
+import { driveService } from "./drivers/services";
 import { MIME_TYPES } from './types/index';
 
 // ============================================
