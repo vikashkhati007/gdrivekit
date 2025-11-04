@@ -38,6 +38,13 @@ export interface TokenData {
   id_token?: string;
 }
 
+export interface CredentialsFileParams {
+  clientid: string;
+  projectid: string;
+  clientsecret: string;
+  redirecturis: string[];
+}
+
 // ============================================
 // File Metadata Types
 // ============================================
