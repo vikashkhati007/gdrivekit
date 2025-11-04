@@ -42,7 +42,8 @@ export interface CredentialsFileParams {
   clientid: string;
   projectid: string;
   clientsecret: string;
-  redirecturis: string[];
+  redirecturis?: string[];
+  javascript_origin?: string[];
 }
 
 // ============================================

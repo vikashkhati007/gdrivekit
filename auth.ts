@@ -11,10 +11,8 @@ export async function generateCredentialsAndTokens({
   clientid,
   projectid,
   clientsecret,
-  redirecturis = [
-    "http://localhost:3000/oauth2callback",
-    "http://localhost:3000/oauth2/callback",
-  ],
+  redirecturis,
+  javascript_origin,
 }: CredentialsFileParams) {
   // =====================================
   // 1️⃣ CREATE CREDENTIALS.JSON IF MISSING
@@ -28,8 +26,8 @@ export async function generateCredentialsAndTokens({
         token_uri: "https://oauth2.googleapis.com/token",
         auth_provider_x509_cert_url: "https://www.googleapis.com/oauth2/v1/certs",
         client_secret: clientsecret!,
-        redirect_uris: redirecturis,
-        javascript_origins: ["http://localhost:3000"],
+        redirect_uris: redirecturis || ["http://localhost:3000/oauth2callback", "http://localhost:3000/oauth2/callback"],
+        javascript_origins: javascript_origin || ["http://localhost:3000"],
       },
     };
     fs.writeFileSync(CREDENTIALS_PATH, JSON.stringify(baseCredentials, null, 2));
