@@ -761,6 +761,7 @@ export const MIME_TYPES = {
   POWERPOINT: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
   TEXT: 'text/plain',
   CSV: 'text/csv',
+  JSON: 'application/json',
   
   // Images
   JPEG: 'image/jpeg',
