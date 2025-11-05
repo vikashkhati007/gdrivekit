@@ -149,13 +149,12 @@ main();
 ---
 
 ## Json Operation
-
 | Method                  | Description                               |
 | ----------------------- | ----------------------------------------- |
 | `readJsonFileData()`    | Read JSON file content                    |
 | `addJsonKeyValue()`     | Add a new key-value pair to a JSON file   |
-| `updateJsonField()`     | Update an existing field in a JSON file   |
-| `deleteJsonField()`     | Delete a field from a JSON file           |
+| `updateJsonFieldAndValues()`     | Update an existing field in a JSON file   |
+| `deleteJsonFieldAndKeys()`     | Delete a field from a JSON file           |
 
 ### ⚡ Example: Upload a File
 

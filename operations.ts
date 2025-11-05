@@ -1,5 +1,5 @@
 import { driveService } from "./drivers/services";
-import { MIME_TYPES, MimeType } from './types/index';
+import { MIME_TYPES, MimeType } from "./types/index";
 
 // ============================================
 // FILE OPERATIONS
@@ -13,11 +13,12 @@ import { MIME_TYPES, MimeType } from './types/index';
 export async function readFileData(fileId: string): Promise<string> {
   const response = await driveService.readFileData(fileId);
   if (response.success && response.data) {
-    return typeof response.data === 'string' ? response.data : response.data.toString();
+    return typeof response.data === "string"
+      ? response.data
+      : response.data.toString();
   }
-  throw new Error(response.error || 'Failed to read file data');
+  throw new Error(response.error || "Failed to read file data");
 }
-
 
 /**
  * Upload a file to Google Drive
@@ -40,7 +41,6 @@ export async function uploadFile(
     mimeType: options?.mimeType,
   });
 }
-
 
 /**
  * Download a file from Google Drive
@@ -94,26 +94,25 @@ export async function getFileInfo(fileId: string) {
 export async function moveFile(fileId: string, newFolderId: string) {
   const file = await driveService.getFileMetadata(fileId);
   if (!file.success || !file.data) {
-    return { success: false, error: 'File not found' };
+    return { success: false, error: "File not found" };
   }
 
-  return await driveService.updateFileMetadata(fileId, { parents: [newFolderId] });
+  return await driveService.updateFileMetadata(fileId, {
+    parents: [newFolderId],
+  });
 }
 
-export async function moveFileByName(
-  fileName: string, 
-  folderName: string
-){
+export async function moveFileByName(fileName: string, folderName: string) {
   // Resolve file ID by name
   const fileResult = await getFileIdByName(fileName);
   if (!fileResult.success || !fileResult.fileId) {
-    return { success: false, error: 'File not found' };
+    return { success: false, error: "File not found" };
   }
 
   // Resolve folder ID by name
   const folderResult = await getFolderIdByName(folderName);
   if (!folderResult.success || !folderResult.folderId) {
-    return { success: false, error: 'Destination folder not found' };
+    return { success: false, error: "Destination folder not found" };
   }
 
   // Move using resolved IDs
@@ -127,7 +126,10 @@ export async function moveFileByName(
  */
 export async function copyFile(fileId: string, newName?: string) {
   // TODO: Implement copyFile in driveService or use a general API call method
-  return await (driveService as any).copyFile(fileId, newName ? { name: newName } : undefined);
+  return await (driveService as any).copyFile(
+    fileId,
+    newName ? { name: newName } : undefined
+  );
 }
 
 // ============================================
@@ -143,9 +145,9 @@ export async function copyFile(fileId: string, newName?: string) {
 export async function readJsonFileData(fileId: string): Promise<any> {
   const content = await readFileData(fileId);
   try {
-    return {success: true, data: JSON.parse(content)};
+    return { success: true, data: JSON.parse(content) };
   } catch (error) {
-    return {success: false, error: 'Failed to parse JSON file content'};
+    return { success: false, error: "Failed to parse JSON file content" };
   }
 }
 
@@ -153,11 +155,7 @@ export async function readJsonFileData(fileId: string): Promise<any> {
  * Add a new key-value pair to a JSON file on Google Drive.
  * Supports nested keys (e.g., "user.profile.name").
  */
-export async function addJsonKeyValue(
-  fileId: string,
-  key: string,
-  value: any
-) {
+export async function addJsonKeyValue(fileId: string, key: string, value: any) {
   try {
     // Step 1: Read existing JSON file content
     const readResponse = await driveService.readFileData(fileId, true);
@@ -188,7 +186,10 @@ export async function addJsonKeyValue(
     current[parts.at(-1)!] = value;
 
     // Step 4: Update file on Google Drive
-    const updateResponse = await driveService.updateJsonContent(fileId, jsonData);
+    const updateResponse = await driveService.updateJsonContent(
+      fileId,
+      jsonData
+    );
     if (!updateResponse.success) {
       throw new Error(updateResponse.error || "Failed to update file");
     }
@@ -200,54 +201,135 @@ export async function addJsonKeyValue(
   }
 }
 
+/**
+ * Delete a key (supports nested paths like "user.profile.name")
+ * from a JSON file stored in Google Drive.
+ */
+export async function deleteJsonFieldAndKeys(fileId: string, key: string) {
+  try {
+    const readResponse = await driveService.readFileData(fileId, true);
+    if (!readResponse.success || !readResponse.data) {
+      throw new Error(readResponse.error || "Failed to read JSON file data");
+    }
 
+    let jsonData: Record<string, any>;
+    try {
+      jsonData = JSON.parse(readResponse.data as string);
+    } catch {
+      throw new Error("Invalid JSON format in file");
+    }
+
+    const parts = key.split(".");
+    let current = jsonData;
+
+    for (let i = 0; i < parts.length - 1; i++) {
+      const part = parts[i];
+      if (!current[part] || typeof current[part] !== "object") {
+        throw new Error(`Key path '${key}' does not exist in JSON`);
+      }
+      current = current[part];
+    }
+
+    const lastKey = parts.at(-1)!;
+
+    if (!(lastKey in current)) {
+      throw new Error(`Key '${lastKey}' does not exist`);
+    }
+
+    delete current[lastKey];
+
+    // ✅ Now upload with enforced JSON MIME type
+    const updateResponse = await driveService.updateJsonContent(
+      fileId,
+      jsonData
+    );
+    if (!updateResponse.success) {
+      throw new Error(updateResponse.error || "Failed to update file");
+    }
+
+    return { success: true, data: updateResponse.data };
+  } catch (error: any) {
+    console.error("❌ Error deleting key-value pair:", error.message);
+    return { success: false, error: error.message };
+  }
+}
 
 /**
- * Update a specific field in a JSON file
+ * Update or rename a key in a JSON file stored on Google Drive.
+ * Supports nested keys using dot notation (e.g., "user.profile.name").
+ * 
  * @param fileId - Google Drive file ID
- * @param fieldPath - Dot-notation path to the field (e.g., 'name.first')
- * @param newValue - New value for the field
+ * @param keyPath - The existing key path to update (supports nested)
+ * @param newKey - Optional new key name (if you want to rename the key)
+ * @param newValue - Optional new value to assign
  */
-export async function updateJsonField(fileId: string, fieldPath: string, newValue: any) {
-  const jsonData = await readJsonFileData(fileId);
-  const fieldParts = fieldPath.split('.');
-  let current = jsonData;
-
-  for (let i = 0; i < fieldParts.length - 1; i++) {
-    const part = fieldParts[i];
-    if (current[part] === undefined) {
-      throw new Error(`Field path '${fieldPath}' does not exist in JSON`);
+export async function updateJsonFieldAndValues(
+  fileId: string,
+  keyPath: string,
+  newKey?: string,
+  newValue?: any
+) {
+  try {
+    const readResponse = await driveService.readFileData(fileId, true);
+    if (!readResponse.success || !readResponse.data) {
+      throw new Error(readResponse.error || "Failed to read JSON file data");
     }
-    current = current[part];
+
+    let jsonData: Record<string, any>;
+    try {
+      jsonData = JSON.parse(readResponse.data as string);
+    } catch {
+      throw new Error("Invalid JSON format in file");
+    }
+
+    const parts = keyPath.split(".");
+    let current = jsonData;
+
+    for (let i = 0; i < parts.length - 1; i++) {
+      const part = parts[i];
+      if (!current[part] || typeof current[part] !== "object") {
+        throw new Error(`Key path '${keyPath}' does not exist in JSON`);
+      }
+      current = current[part];
+    }
+
+    const oldKey = parts.at(-1)!;
+
+    if (!(oldKey in current)) {
+      throw new Error(`Key '${oldKey}' does not exist`);
+    }
+
+    const existingValue = current[oldKey];
+    const finalValue = newValue !== undefined ? newValue : existingValue;
+    const finalKey = newKey && newKey !== oldKey ? newKey : oldKey;
+
+    // ✅ Rebuild to preserve order AND ensure old key is removed
+    const rebuilt: Record<string, any> = {};
+    for (const k of Object.keys(current)) {
+      if (k === oldKey) {
+        rebuilt[finalKey] = finalValue; // rename or update key
+      } else {
+        rebuilt[k] = current[k];
+      }
+    }
+
+    // Replace the object content cleanly (not merge)
+    Object.keys(current).forEach(k => delete current[k]);
+    Object.assign(current, rebuilt);
+
+    const updateResponse = await driveService.updateJsonContent(fileId, jsonData);
+    if (!updateResponse.success) {
+      throw new Error(updateResponse.error || "Failed to update file");
+    }
+
+    return { success: true, data: updateResponse.data };
+  } catch (error: any) {
+    console.error("❌ Error updating JSON key-value:", error.message);
+    return { success: false, error: error.message };
   }
-
-  current[fieldParts[fieldParts.length - 1]] = newValue;
-
-  // ✅ Now update using the new method
-  return await driveService.updateJsonContent(fileId, jsonData);
 }
 
 
-// Delete specific field in json file
-/**
- * Delete a specific field in a JSON file
- * @param fileId - Google Drive file ID
- * @param fieldPath - Dot-notation path to the field (e.g., 'name.first')
- */
-export async function deleteJsonField(fileId: string, fieldPath: string) {
-  const jsonData = await readJsonFileData(fileId);
-  const fieldParts = fieldPath.split('.');
-  let current = jsonData;
-  for (let i = 0; i < fieldParts.length - 1; i++) {
-    const part = fieldParts[i];
-    if (current[part] === undefined) {
-      throw new Error(`Field path '${fieldPath}' does not exist in JSON`);
-    }
-    current = current[part];
-  }
-  delete current[fieldParts[fieldParts.length - 1]];
-  return await updateFile(fileId, JSON.stringify(jsonData));
-}
 
 
 // ============================================
@@ -259,7 +341,10 @@ export async function deleteJsonField(fileId: string, fieldPath: string) {
  * @param folderName - Name of the folder
  * @param parentFolderId - Optional: Parent folder ID (creates in root if not specified)
  */
-export async function createFolder(folderName: string, parentFolderId?: string) {
+export async function createFolder(
+  folderName: string,
+  parentFolderId?: string
+) {
   return await driveService.createFolder(folderName, parentFolderId);
 }
 
@@ -276,7 +361,7 @@ export async function deleteFolder(folderId: string) {
  */
 export async function listAllFolders() {
   return await driveService.listFiles({
-    query: `mimeType='${MIME_TYPES.FOLDER}' and trashed=false`
+    query: `mimeType='${MIME_TYPES.FOLDER}' and trashed=false`,
   });
 }
 
@@ -286,7 +371,7 @@ export async function listAllFolders() {
  */
 export async function listFilesInFolder(folderId: string) {
   return await driveService.listFiles({
-    query: `'${folderId}' in parents and trashed=false`
+    query: `'${folderId}' in parents and trashed=false`,
   });
 }
 
@@ -300,7 +385,7 @@ export async function listFilesInFolder(folderId: string) {
  */
 export async function searchByName(fileName: string) {
   return await driveService.listFiles({
-    query: `name contains '${fileName}' and trashed=false`
+    query: `name contains '${fileName}' and trashed=false`,
   });
 }
 
@@ -310,7 +395,7 @@ export async function searchByName(fileName: string) {
  */
 export async function searchByExactName(fileName: string) {
   return await driveService.listFiles({
-    query: `name='${fileName}' and trashed=false`
+    query: `name='${fileName}' and trashed=false`,
   });
 }
 
@@ -321,15 +406,15 @@ export async function searchByExactName(fileName: string) {
 export async function searchByType(type: string) {
   const mimeTypes: Record<string, string> = {
     pdf: MIME_TYPES.PDF,
-    image: 'image/',
+    image: "image/",
     document: MIME_TYPES.DOCUMENT,
     spreadsheet: MIME_TYPES.SPREADSHEET,
     presentation: MIME_TYPES.PRESENTATION,
-    folder: MIME_TYPES.FOLDER
+    folder: MIME_TYPES.FOLDER,
   };
 
   const mimeType = mimeTypes[type.toLowerCase()] || type;
-  const query = mimeType.endsWith('/')
+  const query = mimeType.endsWith("/")
     ? `mimeType contains '${mimeType}' and trashed=false`
     : `mimeType='${mimeType}' and trashed=false`;
 
@@ -341,10 +426,10 @@ export async function searchByType(type: string) {
  * @param date - Date string (e.g., '2024-01-01' or '2024-01-01T10:00:00')
  */
 export async function searchModifiedAfter(date: string) {
-  const isoDate = date.includes('T') ? date : `${date}T00:00:00`;
+  const isoDate = date.includes("T") ? date : `${date}T00:00:00`;
   return await driveService.listFiles({
     query: `modifiedTime > '${isoDate}' and trashed=false`,
-    orderBy: 'modifiedTime desc'
+    orderBy: "modifiedTime desc",
   });
 }
 
@@ -353,7 +438,7 @@ export async function searchModifiedAfter(date: string) {
  */
 export async function searchStarredFiles() {
   return await driveService.listFiles({
-    query: 'starred=true and trashed=false'
+    query: "starred=true and trashed=false",
   });
 }
 
@@ -362,7 +447,7 @@ export async function searchStarredFiles() {
  */
 export async function searchSharedFiles() {
   return await driveService.listFiles({
-    query: 'sharedWithMe=true and trashed=false'
+    query: "sharedWithMe=true and trashed=false",
   });
 }
 
@@ -372,7 +457,7 @@ export async function searchSharedFiles() {
  */
 export async function searchByContent(searchText: string) {
   return await driveService.listFiles({
-    query: `fullText contains '${searchText}' and trashed=false`
+    query: `fullText contains '${searchText}' and trashed=false`,
   });
 }
 
@@ -387,7 +472,7 @@ export async function searchByContent(searchText: string) {
 export async function listFiles(limit: number = 10) {
   return await driveService.listFiles({
     pageSize: limit,
-    query: 'trashed=false'
+    query: "trashed=false",
   });
 }
 
@@ -402,8 +487,8 @@ export async function listRecentFiles(days: number = 7) {
 
   return await driveService.listFiles({
     query: `modifiedTime > '${isoDate}' and trashed=false`,
-    orderBy: 'modifiedTime desc',
-    pageSize: 20
+    orderBy: "modifiedTime desc",
+    pageSize: 20,
   });
 }
 
@@ -412,7 +497,7 @@ export async function listRecentFiles(days: number = 7) {
  */
 export async function listPDFs() {
   return await driveService.listFiles({
-    query: `mimeType='${MIME_TYPES.PDF}' and trashed=false`
+    query: `mimeType='${MIME_TYPES.PDF}' and trashed=false`,
   });
 }
 
@@ -421,7 +506,7 @@ export async function listPDFs() {
  */
 export async function listImages() {
   return await driveService.listFiles({
-    query: `mimeType contains 'image/' and trashed=false`
+    query: `mimeType contains 'image/' and trashed=false`,
   });
 }
 
@@ -494,18 +579,18 @@ export async function fileExists(fileName: string): Promise<boolean> {
 export async function getFolderIdByName(folderName: string) {
   const result = await driveService.listFiles({
     query: `name='${folderName}' and mimeType='${MIME_TYPES.FOLDER}' and trashed=false`,
-    pageSize: 1
+    pageSize: 1,
   });
 
   if (result.success && result.data?.files.length) {
     return {
       success: true,
-      folderId: result.data.files[0]?.id || '',
-      folder: result.data.files[0]
+      folderId: result.data.files[0]?.id || "",
+      folder: result.data.files[0],
     };
   }
 
-  return { success: false, error: 'Folder not found' };
+  return { success: false, error: "Folder not found" };
 }
 
 /**
@@ -518,12 +603,12 @@ export async function getFileIdByName(fileName: string) {
   if (result.success && result.data?.files.length) {
     return {
       success: true,
-      fileId: result.data.files[0]?.id || '',
-      file: result.data.files[0]
+      fileId: result.data.files[0]?.id || "",
+      file: result.data.files[0],
     };
   }
 
-  return { success: false, error: 'File not found' };
+  return { success: false, error: "File not found" };
 }
 
 // ============================================
@@ -546,8 +631,8 @@ export const driveOperations = {
   //Json operations
   readJsonFileData,
   addJsonKeyValue,
-  updateJsonField,
-  deleteJsonField,
+  updateJsonFieldAndValues,
+  deleteJsonFieldAndKeys,
 
   // Folder operations
   createFolder,
@@ -578,5 +663,5 @@ export const driveOperations = {
   // Utility operations
   fileExists,
   getFolderIdByName,
-  getFileIdByName
+  getFileIdByName,
 };

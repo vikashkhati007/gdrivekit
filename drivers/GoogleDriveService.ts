@@ -329,6 +329,9 @@ export class GoogleDriveService {
     try {
       const response = await this.drive.files.update({
         fileId,
+        requestBody: {
+          mimeType: "application/json", // ✅ ensure proper file type
+        },
         media: {
           mimeType: "application/json",
           body: JSON.stringify(jsonData, null, 2),
