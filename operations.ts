@@ -1,9 +1,23 @@
 import { driveService } from "./drivers/services";
-import { MIME_TYPES } from './types/index';
+import { MIME_TYPES, MimeType } from './types/index';
 
 // ============================================
 // FILE OPERATIONS
 // ============================================
+
+//readFileData
+/**
+ * Read file content from Google Drive
+ * @param fileId - Google Drive file ID
+ */
+export async function readFileData(fileId: string): Promise<string> {
+  const response = await driveService.readFileData(fileId);
+  if (response.success && response.data) {
+    return typeof response.data === 'string' ? response.data : response.data.toString();
+  }
+  throw new Error(response.error || 'Failed to read file data');
+}
+
 
 /**
  * Upload a file to Google Drive
@@ -16,14 +30,17 @@ export async function uploadFile(
     fileName?: string;
     folderId?: string;
     description?: string;
+    mimeType?: MimeType;
   }
 ) {
   return await driveService.uploadFile(filePath, {
     name: options?.fileName,
     parents: options?.folderId ? [options.folderId] : undefined,
-    description: options?.description
+    description: options?.description,
+    mimeType: options?.mimeType,
   });
 }
+
 
 /**
  * Download a file from Google Drive
@@ -112,6 +129,126 @@ export async function copyFile(fileId: string, newName?: string) {
   // TODO: Implement copyFile in driveService or use a general API call method
   return await (driveService as any).copyFile(fileId, newName ? { name: newName } : undefined);
 }
+
+// ============================================
+// JSON OPERATIONS
+// ============================================
+
+// readFileData for json files
+
+/**
+ * Read JSON file content from Google Drive
+ * @param fileId - Google Drive file ID
+ */
+export async function readJsonFileData(fileId: string): Promise<any> {
+  const content = await readFileData(fileId);
+  try {
+    return {success: true, data: JSON.parse(content)};
+  } catch (error) {
+    return {success: false, error: 'Failed to parse JSON file content'};
+  }
+}
+
+/**
+ * Add a new key-value pair to a JSON file on Google Drive.
+ * Supports nested keys (e.g., "user.profile.name").
+ */
+export async function addJsonKeyValue(
+  fileId: string,
+  key: string,
+  value: any
+) {
+  try {
+    // Step 1: Read existing JSON file content
+    const readResponse = await driveService.readFileData(fileId, true);
+    if (!readResponse.success || !readResponse.data) {
+      throw new Error(readResponse.error || "Failed to read JSON file data");
+    }
+
+    // Step 2: Parse JSON
+    let jsonData: Record<string, any>;
+    try {
+      jsonData = JSON.parse(readResponse.data as string);
+    } catch {
+      throw new Error("Invalid JSON format in file");
+    }
+
+    // Step 3: Add or update key (supports nested keys)
+    const parts = key.split(".");
+    let current = jsonData;
+
+    for (let i = 0; i < parts.length - 1; i++) {
+      const part = parts[i];
+      if (!current[part] || typeof current[part] !== "object") {
+        current[part] = {};
+      }
+      current = current[part];
+    }
+
+    current[parts.at(-1)!] = value;
+
+    // Step 4: Update file on Google Drive
+    const updateResponse = await driveService.updateJsonContent(fileId, jsonData);
+    if (!updateResponse.success) {
+      throw new Error(updateResponse.error || "Failed to update file");
+    }
+
+    return { success: true, data: updateResponse.data };
+  } catch (error: any) {
+    console.error("❌ Error adding key-value pair:", error.message);
+    return { success: false, error: error.message };
+  }
+}
+
+
+
+/**
+ * Update a specific field in a JSON file
+ * @param fileId - Google Drive file ID
+ * @param fieldPath - Dot-notation path to the field (e.g., 'name.first')
+ * @param newValue - New value for the field
+ */
+export async function updateJsonField(fileId: string, fieldPath: string, newValue: any) {
+  const jsonData = await readJsonFileData(fileId);
+  const fieldParts = fieldPath.split('.');
+  let current = jsonData;
+
+  for (let i = 0; i < fieldParts.length - 1; i++) {
+    const part = fieldParts[i];
+    if (current[part] === undefined) {
+      throw new Error(`Field path '${fieldPath}' does not exist in JSON`);
+    }
+    current = current[part];
+  }
+
+  current[fieldParts[fieldParts.length - 1]] = newValue;
+
+  // ✅ Now update using the new method
+  return await driveService.updateJsonContent(fileId, jsonData);
+}
+
+
+// Delete specific field in json file
+/**
+ * Delete a specific field in a JSON file
+ * @param fileId - Google Drive file ID
+ * @param fieldPath - Dot-notation path to the field (e.g., 'name.first')
+ */
+export async function deleteJsonField(fileId: string, fieldPath: string) {
+  const jsonData = await readJsonFileData(fileId);
+  const fieldParts = fieldPath.split('.');
+  let current = jsonData;
+  for (let i = 0; i < fieldParts.length - 1; i++) {
+    const part = fieldParts[i];
+    if (current[part] === undefined) {
+      throw new Error(`Field path '${fieldPath}' does not exist in JSON`);
+    }
+    current = current[part];
+  }
+  delete current[fieldParts[fieldParts.length - 1]];
+  return await updateFile(fileId, JSON.stringify(jsonData));
+}
+
 
 // ============================================
 // FOLDER OPERATIONS
@@ -395,6 +532,7 @@ export async function getFileIdByName(fileName: string) {
 
 export const driveOperations = {
   // File operations
+  readFileData,
   uploadFile,
   downloadFile,
   deleteFile,
@@ -404,6 +542,12 @@ export const driveOperations = {
   moveFile,
   moveFileByName,
   copyFile,
+
+  //Json operations
+  readJsonFileData,
+  addJsonKeyValue,
+  updateJsonField,
+  deleteJsonField,
 
   // Folder operations
   createFolder,

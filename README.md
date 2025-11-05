@@ -148,6 +148,15 @@ main();
 
 ---
 
+## Json Operation
+
+| Method                  | Description                               |
+| ----------------------- | ----------------------------------------- |
+| `readJsonFileData()`    | Read JSON file content                    |
+| `addJsonKeyValue()`     | Add a new key-value pair to a JSON file   |
+| `updateJsonField()`     | Update an existing field in a JSON file   |
+| `deleteJsonField()`     | Delete a field from a JSON file           |
+
 ### ⚡ Example: Upload a File
 
 ```ts
@@ -166,6 +175,25 @@ await operations.uploadFile({
 const files = await operations.searchByName("invoice");
 if (files?.data?.files?.length) {
   await operations.downloadFile(files.data.files[0].id, "./downloads/invoice.pdf");
+}
+```
+
+---
+
+### ⚡ Example: Add a Key-Value Pair to a JSON File
+
+```ts
+const fileId = "1234567890abcdef1234567890abcdef";
+const addResult = await operations.addJsonKeyValue(
+  fileId,
+  "alive",
+  true
+);
+
+if (addResult.success) {
+  console.log("✅ Added new key-value pair successfully");
+} else {
+  console.error("❌ Failed:", addResult.error);
 }
 ```
 

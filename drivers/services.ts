@@ -1,4 +1,4 @@
-import type { GoogleCredentials, TokenData } from "../types";
+import type { GoogleCredentials, TokenData } from "../types/index";
 import fs from "fs";
 import { GoogleDriveService } from "./GoogleDriveService";
 
