@@ -224,6 +224,7 @@ export interface VideoMediaMetadata {
   durationMillis?: string;
 }
 
+
 export interface ShortcutDetails {
   targetId?: string;
   targetMimeType?: string;

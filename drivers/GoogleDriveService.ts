@@ -10,6 +10,8 @@ import type {
   ApiResponse,
   FileMetadata,
   ListFilesResponse,
+  ImageMediaMetadata,
+  VideoMediaMetadata,
 } from "../types/index";
 
 export class GoogleDriveService {
@@ -411,5 +413,77 @@ export class GoogleDriveService {
       query: searchQuery,
       pageSize: pageSize,
     });
+  }
+
+  /**
+   * Get image metadata for a file
+   */
+  public async getImageMetadata(
+    fileId: string
+  ): Promise<ApiResponse<ImageMediaMetadata>> {
+    try {
+      const response = await this.drive.files.get({
+        fileId: fileId,
+        fields: "imageMediaMetadata",
+      });
+
+      return {
+        success: true,
+        data: response.data.imageMediaMetadata as ImageMediaMetadata,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : "Unknown error",
+      };
+    }
+  }
+
+  /**
+   * Get video metadata for a file
+   */
+  public async getVideoMetadata(
+    fileId: string
+  ): Promise<ApiResponse<VideoMediaMetadata>> {
+    try {
+      const response = await this.drive.files.get({
+        fileId: fileId,
+        fields: "videoMediaMetadata",
+      });
+
+      return {
+        success: true,
+        data: response.data.videoMediaMetadata as VideoMediaMetadata,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : "Unknown error",
+      };
+    }
+  }
+
+  /**
+   * Get complete file metadata including image/video metadata
+   */
+  public async getCompleteFileMetadata(
+    fileId: string
+  ): Promise<ApiResponse<FileMetadata>> {
+    try {
+      const response = await this.drive.files.get({
+        fileId: fileId,
+        fields: "*", // Get all available fields including metadata
+      });
+
+      return {
+        success: true,
+        data: response.data as FileMetadata,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : "Unknown error",
+      };
+    }
   }
 }

@@ -45,6 +45,7 @@ await generateCredentialsAndTokens({
   projectid: process.env.GOOGLE_PROJECT_ID!,
   clientsecret: process.env.GOOGLE_CLIENT_SECRET!,
   redirecturis: ["http://localhost:3000/oauth2callback"],
+  javascriptorigins: ["http://localhost:3000"],
 });
 ```
 
@@ -86,9 +87,18 @@ main();
 | `renameFile()`     | Rename an existing file                   |
 | `updateFile()`     | Update file metadata or content           |
 | `getFileInfo()`    | Get details of a specific file            |
+| `getImageMetadata()` | Get image metadata (EXIF data, dimensions, etc.) |
+| `getVideoMetadata()` | Get video metadata (duration, dimensions, etc.) |
+| `getCompleteFileInfo()` | Get complete file metadata including all fields |
 | `moveFile()`       | Move file to another folder using file ID |
 | `moveFileByName()` | Move file by its name                     |
 | `copyFile()`       | Make a copy of a file in Drive            |
+
+---
+
+### **MetaData Operation**
+| `getImageMetadata()` | Get image metadata (EXIF data, dimensions, etc.) |
+| `getVideoMetadata()` | Get video metadata (duration, dimensions, etc.) |
 
 ---
 
@@ -202,6 +212,21 @@ if (addResult.success) {
   console.log("✅ Added new key-value pair successfully");
 } else {
   console.error("❌ Failed:", addResult.error);
+}
+```
+
+---
+
+### ⚡ Example: Get Metadata
+
+```ts
+const fileId = "1234567890abcdef1234567890abcdef";
+const metadataResult = await operations.getImageMetadata(fileId);
+
+if (metadataResult.success) {
+  console.log("✅ Image Metadata:", metadataResult.data);
+} else {
+  console.error("❌ Failed:", metadataResult.error);
 }
 ```
 

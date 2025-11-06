@@ -86,6 +86,30 @@ export async function getFileInfo(fileId: string) {
 }
 
 /**
+ * Get image metadata for an image file
+ * @param fileId - Google Drive file ID of the image
+ */
+export async function getImageMetadata(fileId: string) {
+  return await driveService.getImageMetadata(fileId);
+}
+
+/**
+ * Get video metadata for a video file
+ * @param fileId - Google Drive file ID of the video
+ */
+export async function getVideoMetadata(fileId: string) {
+  return await driveService.getVideoMetadata(fileId);
+}
+
+/**
+ * Get complete file metadata including all available fields
+ * @param fileId - Google Drive file ID
+ */
+export async function getCompleteFileInfo(fileId: string) {
+  return await driveService.getCompleteFileMetadata(fileId);
+}
+
+/**
  * Move file to a different folder
  * @param fileId - Google Drive file ID
  * @param newFolderId - Destination folder ID
@@ -328,8 +352,6 @@ export async function updateJsonFieldAndValues(
     return { success: false, error: error.message };
   }
 }
-
-
 
 
 // ============================================
@@ -688,10 +710,14 @@ export const driveOperations = {
   renameFile,
   updateFile,
   getFileInfo,
+  getCompleteFileInfo,
   moveFile,
   moveFileByName,
   copyFile,
 
+  // MetaData Operation
+  getImageMetadata,
+  getVideoMetadata,
   //Json operations
   readJsonFileData,
   addJsonKeyValue,
