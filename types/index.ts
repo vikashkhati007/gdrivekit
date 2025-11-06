@@ -772,6 +772,8 @@ export const MIME_TYPES = {
   // Video
   MP4: 'video/mp4',
   AVI: 'video/x-msvideo',
+  MKV: 'video/x-matroska',
+  WEBM: 'video/webm',
   
   // Audio
   MP3: 'audio/mpeg',

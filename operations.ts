@@ -506,9 +506,73 @@ export async function listPDFs() {
  */
 export async function listImages() {
   return await driveService.listFiles({
-    query: `mimeType contains 'image/' and trashed=false`,
+    query: `mimeType='${MIME_TYPES.JPEG}' or mimeType='${MIME_TYPES.PNG}' or mimeType='${MIME_TYPES.GIF}' or mimeType='${MIME_TYPES.SVG}' and trashed=false`,
   });
 }
+
+/**
+ * List all video files
+ */
+export async function listVideos() {
+  return await driveService.listFiles({
+    query: `mimeType='${MIME_TYPES.MP4}' or mimeType='${MIME_TYPES.MKV}' or mimeType='${MIME_TYPES.WEBM}' or mimeType='${MIME_TYPES.AVI}' and trashed=false`,
+  });
+}
+
+/**
+ * List all audio files
+ */
+export async function listAudios() {
+  return await driveService.listFiles({
+    query: `mimeType='${MIME_TYPES.MP3}' or mimeType='${MIME_TYPES.WAV}' and trashed=false`,
+  });
+}
+
+/**
+ * List all archive files
+ */
+export async function listArchives() {
+  return await driveService.listFiles({
+    query: `mimeType='${MIME_TYPES.ZIP}' or mimeType='${MIME_TYPES.RAR}' and trashed=false`,
+  });
+}
+
+/**
+ * List all json files
+ */
+export async function listJSONs() {
+  return await driveService.listFiles({
+    query: `mimeType='${MIME_TYPES.JSON}' and trashed=false`,
+  });
+}
+
+/**
+ * List all sheet files
+ */
+export async function listSheets() {
+  return await driveService.listFiles({
+    query: `mimeType='${MIME_TYPES.SPREADSHEET}' and trashed=false`,
+  });
+}
+
+/**
+ * List all presentation files
+ */
+export async function listPresentations() {
+  return await driveService.listFiles({
+    query: `mimeType='${MIME_TYPES.PRESENTATION}' and trashed=false`,
+  });
+}
+
+/**
+ * List all docs files
+ */
+export async function listDocs() {
+  return await driveService.listFiles({
+    query: `mimeType='${MIME_TYPES.DOCUMENT}' and trashed=false`,
+  });
+}
+
 
 // ============================================
 // BATCH OPERATIONS

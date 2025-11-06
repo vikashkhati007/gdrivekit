@@ -125,6 +125,15 @@ main();
 | `listRecentFiles()` | List recently modified or added files |
 | `listPDFs()`        | List all PDF files                    |
 | `listImages()`      | List all image files                  |
+| `listVideos()`      | List all video files                  |
+| `listAudios()`      | List all audio files                  |
+| `listArchives()`    | List all archive files                |
+| `listJSONs()`       | List all json files                   |
+| `listSheets()`      | List all sheet files                  |
+| `listPresentations()`| List all presentation files           |
+| `listDocs()`        | List all docs files                   |
+
+
 
 ---
 
