@@ -108,8 +108,10 @@ main();
 | --------------------- | --------------------------------------- |
 | `createFolder()`      | Create a new folder                     |
 | `deleteFolder()`      | Delete an existing folder               |
+| `listFoldersByName()` | List all folders with a specific name |
 | `listAllFolders()`    | List all folders in Drive               |
 | `listFilesInFolder()` | List all files within a specific folder |
+| `listFoldersInFolder()` | List all folders within a specific folder |
 
 ---
 

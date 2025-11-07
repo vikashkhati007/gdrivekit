@@ -379,11 +379,31 @@ export async function deleteFolder(folderId: string) {
 }
 
 /**
+ * List folder by name 
+ * @param folderName - Name of the folder
+ */
+export async function listFoldersByName(folderName: string) {
+  return await driveService.listFiles({
+    query: `name='${folderName}' and mimeType='${MIME_TYPES.FOLDER}' and trashed=false`,
+  });
+}
+
+/**
  * List all folders
  */
 export async function listAllFolders() {
   return await driveService.listFiles({
     query: `mimeType='${MIME_TYPES.FOLDER}' and trashed=false`,
+  });
+}
+
+/**
+ * List specific folder in a specific folder
+ * @param folderId - Google Drive folder ID
+ */
+export async function listFoldersInFolder(folderId: string) {
+  return await driveService.listFiles({
+    query: `'${folderId}' in parents and mimeType='${MIME_TYPES.FOLDER}' and trashed=false`,
   });
 }
 
@@ -727,7 +747,9 @@ export const driveOperations = {
   // Folder operations
   createFolder,
   deleteFolder,
+  listFoldersByName,
   listAllFolders,
+  listFoldersInFolder,
   listFilesInFolder,
 
   // Search operations
