@@ -237,28 +237,24 @@ export class GoogleDriveService {
    */
   public async updateFileContent(
     fileId: string,
-    filePath: string
-  ): Promise<ApiResponse<FileMetadata>> {
+    content: string,
+    mimeType: string
+  ) {
     try {
-      const media = {
-        body: fs.createReadStream(filePath),
-      };
+      const buffer = Buffer.from(content, "utf-8");
 
-      const response = await this.drive.files.update({
-        fileId: fileId,
-        media: media,
-        fields: "id, name, mimeType, modifiedTime",
+      const res = await this.drive.files.update({
+        fileId,
+        media: {
+          mimeType,
+          body: buffer,
+        },
       });
 
-      return {
-        success: true,
-        data: response.data as FileMetadata,
-      };
-    } catch (error) {
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : "Unknown error",
-      };
+      return res.data;
+    } catch (error: any) {
+      console.error("❌ Error updating file content:", error.message);
+      throw error;
     }
   }
 
@@ -719,6 +715,95 @@ export class GoogleDriveService {
     } catch (error: any) {
       console.error("❌ Stream creation failed:", error.message);
       return null;
+    }
+  }
+  /**
+   * Select json key value from google drive file
+   */
+  public async selectJsonContent(fileId: string): Promise<any> {
+    try {
+      const fileStream = await this.createStream(fileId, MIME_TYPES.JSON);
+      if (!fileStream) {
+        throw new Error("Failed to create stream for JSON file");
+      }
+
+      let jsonContent = "";
+      for await (const chunk of fileStream) {
+        jsonContent += chunk.toString();
+      }
+
+      const jsonData = JSON.parse(jsonContent);
+
+      // ✅ directly return full array or object
+      return jsonData;
+    } catch (error: any) {
+      console.error("❌ JSON selection failed:", error.message);
+      return null;
+    }
+  }
+
+  // Push new object to a JSON array field
+  public async pushJsonObjectToArray(
+    fileId: string,
+    arrayPath: string,
+    newObject: any
+  ): Promise<any> {
+    try {
+      const fileStream = await this.createStream(fileId, MIME_TYPES.JSON);
+      if (!fileStream) throw new Error("Failed to create stream for JSON file");
+
+      let jsonContent = "";
+      for await (const chunk of fileStream) {
+        jsonContent += chunk.toString();
+      }
+
+      const jsonData = JSON.parse(jsonContent);
+
+      // ✅ if path is empty and root is array → push directly
+      if (arrayPath.trim() === "") {
+        if (Array.isArray(jsonData)) {
+          jsonData.push(newObject);
+        } else {
+          throw new Error("Root JSON is not an array");
+        }
+      } else {
+        // 👇 handle nested array path (like "users", "0.friends", etc.)
+        const keys = arrayPath.split(".");
+        let current = jsonData;
+
+        for (let i = 0; i < keys.length - 1; i++) {
+          const key = keys[i];
+          if (!current[key]) current[key] = {}; // create nested if missing
+          current = current[key];
+        }
+
+        const finalKey = keys[keys.length - 1];
+
+        if (!Array.isArray(current[finalKey])) {
+          // if not array, convert or initialize
+          current[finalKey] = current[finalKey] ? [current[finalKey]] : [];
+        }
+
+        current[finalKey].push(newObject);
+      }
+
+      // ✅ update file content in Drive
+      const updatedFile = await this.updateFileContent(
+        fileId,
+        JSON.stringify(jsonData, null, 2),
+        MIME_TYPES.JSON
+      );
+
+      return {
+        success: true,
+        data: updatedFile,
+      };
+    } catch (error: any) {
+      console.error("❌ Error pushing new object:", error.message);
+      return {
+        success: false,
+        error: error.message,
+      };
     }
   }
 }

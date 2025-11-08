@@ -130,8 +130,12 @@ export async function renameFile(fileId: string, newName: string) {
  * @param fileId - Google Drive file ID
  * @param newFilePath - Path to new content file
  */
-export async function updateFile(fileId: string, newFilePath: string) {
-  return await driveService.updateFileContent(fileId, newFilePath);
+export async function updateFile(
+  fileId: string,
+  newContent: string,
+  mimeType: MimeType
+) {
+  return await driveService.updateFileContent(fileId, newContent, mimeType);
 }
 
 /**
@@ -229,6 +233,19 @@ export async function createJsonFile(jsonContent: any, name: string) {
 }
 
 /**
+ * Select full JSON data from Google Drive file.
+ * @param fileId - Google Drive file ID of the JSON file.
+ * @returns Full JSON object.
+ */
+export async function selectJsonContent(fileId: string): Promise<any> {
+  const data = await driveService.selectJsonContent(fileId);
+  return {
+    success: true,
+    data,
+  };
+}
+
+/**
  * Read JSON file content from Google Drive
  * @param fileId - Google Drive file ID
  */
@@ -291,6 +308,16 @@ export async function addJsonKeyValue(fileId: string, key: string, value: any) {
   }
 }
 
+// pushJsonObjectToArray
+
+export async function pushJsonObjectToArray(
+  fileId: string,
+  arrayPath: string,
+  newObject: any
+) {
+  return await driveService.pushJsonObjectToArray(fileId, arrayPath, newObject);
+}
+
 /**
  * Delete a key (supports nested paths like "user.profile.name")
  * from a JSON file stored in Google Drive.
@@ -302,7 +329,7 @@ export async function deleteJsonFieldAndKeys(fileId: string, key: string) {
       throw new Error(readResponse.error || "Failed to read JSON file data");
     }
 
-    let jsonData: Record<string, any>;
+    let jsonData: any;
     try {
       jsonData = JSON.parse(readResponse.data as string);
     } catch {
@@ -322,17 +349,22 @@ export async function deleteJsonFieldAndKeys(fileId: string, key: string) {
 
     const lastKey = parts.at(-1)!;
 
-    if (!(lastKey in current)) {
-      throw new Error(`Key '${lastKey}' does not exist`);
+    // ✅ Handle arrays properly
+    if (Array.isArray(current)) {
+      const index = parseInt(lastKey, 10);
+      if (isNaN(index) || index < 0 || index >= current.length) {
+        throw new Error(`Invalid array index: ${lastKey}`);
+      }
+      current.splice(index, 1); // 🧹 Proper removal
+    } else {
+      if (!(lastKey in current)) {
+        throw new Error(`Key '${lastKey}' does not exist`);
+      }
+      delete current[lastKey];
     }
 
-    delete current[lastKey];
-
-    // ✅ Now upload with enforced JSON MIME type
-    const updateResponse = await driveService.updateJsonContent(
-      fileId,
-      jsonData
-    );
+    // ✅ Save updated JSON
+    const updateResponse = await driveService.updateJsonContent(fileId, jsonData);
     if (!updateResponse.success) {
       throw new Error(updateResponse.error || "Failed to update file");
     }
@@ -343,6 +375,7 @@ export async function deleteJsonFieldAndKeys(fileId: string, key: string) {
     return { success: false, error: error.message };
   }
 }
+
 
 /**
  * Update or rename a key in a JSON file stored on Google Drive.
@@ -765,14 +798,9 @@ export async function shareFile(
 /**
  * Create stream for any Google Drive file (audio, video, image, doc, etc.)
  */
-export async function createStream(
-  fileId: string,
-  targetMimeType: string
-) {
+export async function createStream(fileId: string, targetMimeType: string) {
   return await driveService.createStream(fileId, targetMimeType);
 }
-
-
 
 /**
  * Get folder ID by name
@@ -992,7 +1020,9 @@ export const driveOperations = {
   //Json operations
   createJsonFile,
   readJsonFileData,
+  selectJsonContent,
   addJsonKeyValue,
+  pushJsonObjectToArray,
   updateJsonFieldAndValues,
   deleteJsonFieldAndKeys,
 

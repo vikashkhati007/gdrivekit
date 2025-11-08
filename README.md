@@ -95,9 +95,10 @@ main();
 
 ---
 
-### **MetaData Operation**
+### 🗂️ **Metadata Operations**
 
-| Method               | Description                                     |
+| Method                | Description                             |
+| --------------------- | --------------------------------------- |
 | `getImageMetadata()` | Get image metadata (EXIF data, dimensions, etc.) |
 | `getVideoMetadata()` | Get video metadata (duration, dimensions, etc.)  |
 
@@ -178,7 +179,9 @@ main();
 | `createJsonFile()`      | Create a new JSON file                    |
 | `readJsonFileData()`    | Read JSON file content                    |
 | `addJsonKeyValue()`     | Add a new key-value pair to a JSON file   |
+| `pushJsonObjectToArray()`     | Push a new object to a JSON array field   |
 | `updateJsonFieldAndValues()`     | Update an existing field in a JSON file   |
+| `selectJsonFieldAndValues()`     | Select an existing field in a JSON file   |
 | `deleteJsonFieldAndKeys()`     | Delete a field from a JSON file           |
 
 ---
