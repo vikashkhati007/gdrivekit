@@ -761,6 +761,19 @@ export async function shareFile(
   return await driveService.shareFile(fileId, emailAddress, role);
 }
 
+//Create Stream
+/**
+ * Create stream for any Google Drive file (audio, video, image, doc, etc.)
+ */
+export async function createStream(
+  fileId: string,
+  targetMimeType: string
+) {
+  return await driveService.createStream(fileId, targetMimeType);
+}
+
+
+
 /**
  * Get folder ID by name
  * @param folderName - Folder name to find
@@ -1022,6 +1035,7 @@ export const driveOperations = {
   shareFile,
   fileExists,
   getStorageQuota,
+  createStream,
   getFolderIdByName,
   getFileIdByName,
 

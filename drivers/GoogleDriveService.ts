@@ -677,4 +677,48 @@ export class GoogleDriveService {
       };
     }
   }
+  /**
+   * Create stream for any Google Drive file (audio, video, image, doc, etc.)
+   */
+  public async createStream(
+    fileId: string,
+    targetMimeType?: string
+  ): Promise<NodeJS.ReadableStream | null> {
+    try {
+      const file = await this.drive.files.get({
+        fileId,
+        fields: "id, name, mimeType",
+      });
+
+      const sourceMime = file.data.mimeType || "application/octet-stream";
+      let fileStream: NodeJS.ReadableStream;
+
+      // 🧠 Google Docs, Sheets, Slides, etc.
+      if (sourceMime.startsWith("application/vnd.google-apps.")) {
+        if (!targetMimeType) {
+          throw new Error(
+            "Target MIME type required for Google native files (like Docs or Sheets)"
+          );
+        }
+
+        const exportRes = await this.drive.files.export(
+          { fileId, mimeType: targetMimeType },
+          { responseType: "stream" }
+        );
+        fileStream = exportRes.data;
+      } else {
+        // 📦 All normal files (audio, video, pdf, image, etc.)
+        const downloadRes = await this.drive.files.get(
+          { fileId, alt: "media" },
+          { responseType: "stream" }
+        );
+        fileStream = downloadRes.data;
+      }
+
+      return fileStream;
+    } catch (error: any) {
+      console.error("❌ Stream creation failed:", error.message);
+      return null;
+    }
+  }
 }
