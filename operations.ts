@@ -1,5 +1,5 @@
 import { driveService } from "./drivers/services";
-import { MIME_TYPES, MimeType } from "./types/index";
+import { FileMetadata, MIME_TYPES, MimeType } from "./types/index";
 
 // ============================================
 // HELPER FUNCTIONS
@@ -13,19 +13,20 @@ import { MIME_TYPES, MimeType } from "./types/index";
  */
 async function searchByNameHelper(
   name: string,
-  type?: 'file' | 'folder',
-  searchType: 'exact' | 'contains' = 'exact'
+  type?: "file" | "folder",
+  searchType: "exact" | "contains" = "exact"
 ) {
-  let query = searchType === 'exact' ? `name='${name}'` : `name contains '${name}'`;
-  
-  if (type === 'folder') {
+  let query =
+    searchType === "exact" ? `name='${name}'` : `name contains '${name}'`;
+
+  if (type === "folder") {
     query += ` and mimeType='${MIME_TYPES.FOLDER}'`;
-  } else if (type === 'file') {
+  } else if (type === "file") {
     query += ` and mimeType!='${MIME_TYPES.FOLDER}'`;
   }
-  
-  query += ' and trashed=false';
-  
+
+  query += " and trashed=false";
+
   return await driveService.listFiles({ query });
 }
 
@@ -36,10 +37,10 @@ async function searchByNameHelper(
  */
 async function getIdByNameHelper(
   name: string,
-  type?: 'file' | 'folder'
+  type?: "file" | "folder"
 ): Promise<{ success: boolean; id?: string; item?: any; error?: string }> {
-  const result = await searchByNameHelper(name, type, 'exact');
-  
+  const result = await searchByNameHelper(name, type, "exact");
+
   if (result.success && result.data?.files.length) {
     const item = result.data.files[0];
     return {
@@ -49,7 +50,12 @@ async function getIdByNameHelper(
     };
   }
 
-  return { success: false, error: `${type ? type.charAt(0).toUpperCase() + type.slice(1) : 'Item'} not found` };
+  return {
+    success: false,
+    error: `${
+      type ? type.charAt(0).toUpperCase() + type.slice(1) : "Item"
+    } not found`,
+  };
 }
 
 // ============================================
@@ -181,7 +187,7 @@ export async function moveFileByName(fileName: string, folderName: string) {
   // Resolve file and folder IDs by name in parallel for better performance
   const [fileResult, folderResult] = await Promise.all([
     getFileIdByName(fileName),
-    getFolderIdByName(folderName)
+    getFolderIdByName(folderName),
   ]);
 
   if (!fileResult.success || !fileResult.fileId) {
@@ -334,7 +340,7 @@ export async function deleteJsonFieldAndKeys(fileId: string, key: string) {
 /**
  * Update or rename a key in a JSON file stored on Google Drive.
  * Supports nested keys using dot notation (e.g., "user.profile.name").
- * 
+ *
  * @param fileId - Google Drive file ID
  * @param keyPath - The existing key path to update (supports nested)
  * @param newKey - Optional new key name (if you want to rename the key)
@@ -391,10 +397,13 @@ export async function updateJsonFieldAndValues(
     }
 
     // Replace the object content cleanly (not merge)
-    Object.keys(current).forEach(k => delete current[k]);
+    Object.keys(current).forEach((k) => delete current[k]);
     Object.assign(current, rebuilt);
 
-    const updateResponse = await driveService.updateJsonContent(fileId, jsonData);
+    const updateResponse = await driveService.updateJsonContent(
+      fileId,
+      jsonData
+    );
     if (!updateResponse.success) {
       throw new Error(updateResponse.error || "Failed to update file");
     }
@@ -405,7 +414,6 @@ export async function updateJsonFieldAndValues(
     return { success: false, error: error.message };
   }
 }
-
 
 // ============================================
 // FOLDER OPERATIONS
@@ -432,11 +440,11 @@ export async function deleteFolder(folderId: string) {
 }
 
 /**
- * List folder by name 
+ * List folder by name
  * @param folderName - Name of the folder
  */
 export async function listFoldersByName(folderName: string) {
-  return await searchByNameHelper(folderName, 'folder', 'exact');
+  return await searchByNameHelper(folderName, "folder", "exact");
 }
 
 /**
@@ -477,7 +485,7 @@ export async function listFilesInFolder(folderId: string) {
  * @param fileName - Name or partial name to search
  */
 export async function searchByName(fileName: string) {
-  return await searchByNameHelper(fileName, 'file', 'contains');
+  return await searchByNameHelper(fileName, "file", "contains");
 }
 
 /**
@@ -485,7 +493,7 @@ export async function searchByName(fileName: string) {
  * @param fileName - Exact file name
  */
 export async function searchByExactName(fileName: string) {
-  return await searchByNameHelper(fileName, 'file', 'exact');
+  return await searchByNameHelper(fileName, "file", "exact");
 }
 
 /**
@@ -662,7 +670,6 @@ export async function listDocs() {
   });
 }
 
-
 // ============================================
 // BATCH OPERATIONS
 // ============================================
@@ -734,12 +741,26 @@ export async function getStorageQuota() {
 }
 
 /**
+ * Share File
+ * @param fileId - File ID to share
+ * @param emailAddress - Email address of the user to share with
+ * @param role - Role to assign (default: 'reader')
+ */
+export async function shareFile(
+  fileId: string,
+  emailAddress: string,
+  role: string = "reader"
+) {
+  return await driveService.shareFile(fileId, emailAddress, role);
+}
+
+/**
  * Get folder ID by name
  * @param folderName - Folder name to find
  */
 export async function getFolderIdByName(folderName: string) {
-  const result = await getIdByNameHelper(folderName, 'folder');
-  
+  const result = await getIdByNameHelper(folderName, "folder");
+
   if (result.success) {
     return {
       success: true,
@@ -756,8 +777,8 @@ export async function getFolderIdByName(folderName: string) {
  * @param fileName - File name to find
  */
 export async function getFileIdByName(fileName: string) {
-  const result = await getIdByNameHelper(fileName, 'file');
-  
+  const result = await getIdByNameHelper(fileName, "file");
+
   if (result.success) {
     return {
       success: true,
@@ -767,6 +788,163 @@ export async function getFileIdByName(fileName: string) {
   }
 
   return { success: false, error: result.error };
+}
+
+// ============================================
+// Conversion Operation
+// ============================================
+
+/**
+ * Convert a file to a Docs file
+ * @param fileId - File ID to convert
+ */
+
+/** ---------------- Google Docs Conversions ---------------- **/
+
+export async function convertTextToDocs(fileId: string): Promise<FileMetadata> {
+  const response = await driveService.ConversionFunction(
+    fileId,
+    MIME_TYPES.DOCUMENT
+  );
+  if (response.success && response.data) return response.data;
+  throw new Error(response.error || "Failed to convert Text → Google Docs");
+}
+
+export async function convertDocsToPdf(fileId: string): Promise<FileMetadata> {
+  const response = await driveService.ConversionFunction(
+    fileId,
+    MIME_TYPES.PDF
+  );
+  if (response.success && response.data) return response.data;
+  throw new Error(response.error || "Failed to convert Docs → PDF");
+}
+
+export async function convertDocsToWord(fileId: string): Promise<FileMetadata> {
+  const response = await driveService.ConversionFunction(
+    fileId,
+    MIME_TYPES.WORD
+  );
+  if (response.success && response.data) return response.data;
+  throw new Error(response.error || "Failed to convert Docs → Word");
+}
+
+export async function convertDocsToText(fileId: string): Promise<FileMetadata> {
+  const response = await driveService.ConversionFunction(
+    fileId,
+    MIME_TYPES.TEXT
+  );
+  if (response.success && response.data) return response.data;
+  throw new Error(response.error || "Failed to convert Docs → Text");
+}
+
+/** ---------------- Google Sheets Conversions ---------------- **/
+
+export async function convertCsvToSheet(fileId: string): Promise<FileMetadata> {
+  const response = await driveService.ConversionFunction(
+    fileId,
+    MIME_TYPES.SPREADSHEET
+  );
+  if (response.success && response.data) return response.data;
+  throw new Error(response.error || "Failed to convert CSV → Google Sheet");
+}
+
+export async function convertExcelToSheet(
+  fileId: string
+): Promise<FileMetadata> {
+  const response = await driveService.ConversionFunction(
+    fileId,
+    MIME_TYPES.SPREADSHEET
+  );
+  if (response.success && response.data) return response.data;
+  throw new Error(response.error || "Failed to convert Excel → Google Sheet");
+}
+
+export async function convertSheetToCsv(fileId: string): Promise<FileMetadata> {
+  const response = await driveService.ConversionFunction(
+    fileId,
+    MIME_TYPES.CSV
+  );
+  if (response.success && response.data) return response.data;
+  throw new Error(response.error || "Failed to convert Sheet → CSV");
+}
+
+export async function convertSheetToPdf(fileId: string): Promise<FileMetadata> {
+  const response = await driveService.ConversionFunction(
+    fileId,
+    MIME_TYPES.PDF
+  );
+  if (response.success && response.data) return response.data;
+  throw new Error(response.error || "Failed to convert Sheet → PDF");
+}
+
+/** ---------------- Google Slides Conversions ---------------- **/
+
+export async function convertPptToSlides(
+  fileId: string
+): Promise<FileMetadata> {
+  const response = await driveService.ConversionFunction(
+    fileId,
+    MIME_TYPES.PRESENTATION
+  );
+  if (response.success && response.data) return response.data;
+  throw new Error(response.error || "Failed to convert PPT → Google Slides");
+}
+
+export async function convertSlidesToPpt(
+  fileId: string
+): Promise<FileMetadata> {
+  const response = await driveService.ConversionFunction(
+    fileId,
+    MIME_TYPES.POWERPOINT
+  );
+  if (response.success && response.data) return response.data;
+  throw new Error(response.error || "Failed to convert Slides → PPTX");
+}
+
+export async function convertSlidesToPdf(
+  fileId: string
+): Promise<FileMetadata> {
+  const response = await driveService.ConversionFunction(
+    fileId,
+    MIME_TYPES.PDF
+  );
+  if (response.success && response.data) return response.data;
+  throw new Error(response.error || "Failed to convert Slides → PDF");
+}
+
+/** ---------------- PDF Conversions ---------------- **/
+
+export async function convertPdfToDocs(fileId: string): Promise<FileMetadata> {
+  const response = await driveService.ConversionFunction(
+    fileId,
+    MIME_TYPES.DOCUMENT
+  );
+  if (response.success && response.data) return response.data;
+  throw new Error(response.error || "Failed to convert PDF → Google Docs");
+}
+
+/** ---------------- Drawings Conversions ---------------- **/
+
+export async function convertDrawingToPng(
+  fileId: string
+): Promise<FileMetadata> {
+  const response = await driveService.ConversionFunction(
+    fileId,
+    MIME_TYPES.PNG
+  );
+  if (response.success && response.data) return response.data;
+  throw new Error(response.error || "Failed to convert Drawing → PNG");
+}
+
+export async function convertDrawingToPdf(
+  fileId: string
+): Promise<FileMetadata> {
+  const response = await driveService.ConversionFunction(
+    fileId,
+    MIME_TYPES.PDF
+  );
+  if (response.success && response.data) return response.data;
+  throw new Error(response.error || "Failed to convert Drawing → PDF");
 }
 
 // ============================================
@@ -833,8 +1011,29 @@ export const driveOperations = {
   downloadMultipleFiles,
 
   // Utility operations
+  shareFile,
   fileExists,
   getStorageQuota,
   getFolderIdByName,
   getFileIdByName,
+
+  //Conversion Operation
+  convertTextToDocs,
+  convertDocsToPdf,
+  convertDocsToWord,
+  convertDocsToText,
+
+  convertCsvToSheet,
+  convertExcelToSheet,
+  convertSheetToCsv,
+  convertSheetToPdf,
+
+  convertPptToSlides,
+  convertSlidesToPpt,
+  convertSlidesToPdf,
+
+  convertPdfToDocs,
+
+  convertDrawingToPng,
+  convertDrawingToPdf,
 };
