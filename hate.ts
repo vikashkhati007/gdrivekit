@@ -1,32 +1,58 @@
-import express from "express";
 import { driveService, initDriveService } from "./drivers/services";
+import { driveOperations } from "./operations";
 
-const app = express();
-const PORT = 3000;
-
-initDriveService();
-
-app.get("/stream/:id", async (req, res) => {
+async function main() {
   try {
-    const fileId = req.params.id;
-    const stream = await driveService.createStream(fileId);
+    // Initialize drive service
+    initDriveService();
 
-    if (!stream) {
-      return res.status(404).send("File not found");
+    // Search file
+    const searchRes = await driveOperations.getFileIdByName("data.json");
+
+    if (!searchRes.success || !searchRes.fileId) {
+      console.error("❌ data.json not found in Drive");
+      return;
     }
 
-    // Set headers so browser understands it’s media
-    res.setHeader("Content-Type", "audio/mpeg");
-    res.setHeader("Accept-Ranges", "bytes");
+    const deleteRes = await driveOperations.deleteJsonFieldAndKeys(
+      searchRes.fileId,
+      "0", // root array path
+    );
+    console.log(deleteRes);
 
-    // 🧠 Stream directly to client
-    stream.pipe(res);
-  } catch (err) {
-    console.error("❌ Error streaming:", err);
-    res.status(500).send("Failed to stream file");
+    // Push new object to root array
+    const pushRes = await driveOperations.pushJsonObjectToArray(
+      searchRes.fileId,
+      "", // root array path
+      {
+        id: 3,
+        name: "Gamer",
+        email: "Gamer@example.com",
+        address: {
+          city: "Los Angeles",
+          state: "CA",
+          zip: "90001",
+        },
+      }
+    );
+
+    if (pushRes.success) {
+      console.log("✅ New object pushed successfully!");
+    } else {
+      console.error("❌ Failed to push object:", pushRes.error);
+    }
+
+    // Fetch updated data
+    const search = await driveOperations.selectJsonContent(searchRes.fileId);
+    if (search && search.success) {
+      console.log(search.data);
+    } else {
+      console.error("❌ Failed to read updated file");
+    }
+
+  } catch (err: any) {
+    console.error("💥 Unexpected Error:", err.message);
   }
-});
+}
 
-app.listen(PORT, () =>
-  console.log(`🚀 Stream server running at http://localhost:${PORT}`)
-);
+main();
