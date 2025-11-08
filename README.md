@@ -171,6 +171,7 @@ main();
 
 | Method                  | Description                               |
 | ----------------------- | ----------------------------------------- |
+| `createJsonFile()`      | Create a new JSON file                    |
 | `readJsonFileData()`    | Read JSON file content                    |
 | `addJsonKeyValue()`     | Add a new key-value pair to a JSON file   |
 | `updateJsonFieldAndValues()`     | Update an existing field in a JSON file   |
