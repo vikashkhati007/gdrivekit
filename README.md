@@ -87,6 +87,7 @@ main();
 | `renameFile()`     | Rename an existing file                   |
 | `updateFile()`     | Update file metadata or content           |
 | `getFileInfo()`    | Get details of a specific file            |
+| `getFileIdByName()`   | Fetch file ID by its name              |
 | `getCompleteFileInfo()` | Get complete file metadata including all fields |
 | `moveFile()`       | Move file to another folder using file ID |
 | `moveFileByName()` | Move file by its name                     |
@@ -95,8 +96,10 @@ main();
 ---
 
 ### **MetaData Operation**
+
+| Method               | Description                                     |
 | `getImageMetadata()` | Get image metadata (EXIF data, dimensions, etc.) |
-| `getVideoMetadata()` | Get video metadata (duration, dimensions, etc.) |
+| `getVideoMetadata()` | Get video metadata (duration, dimensions, etc.)  |
 
 ---
 
@@ -106,6 +109,7 @@ main();
 | --------------------- | --------------------------------------- |
 | `createFolder()`      | Create a new folder                     |
 | `deleteFolder()`      | Delete an existing folder               |
+| `getFolderIdByName()` | Fetch folder ID by its name             |
 | `listFoldersByName()` | List all folders with a specific name   |
 | `listAllFolders()`    | List all folders in Drive               |
 | `listFilesInFolder()` | List all files within a specific folder |
@@ -162,8 +166,8 @@ main();
 | `shareFile()`        | Share a file with a user      |
 | `fileExists()`        | Check if a file exists      |
 | `getStorageQuota()`   | Get storage quota information |
-| `getFolderIdByName()` | Fetch folder ID by its name |
-| `getFileIdByName()`   | Fetch file ID by its name   |
+| `createStream()`      | Create stream for any Google Drive file (audio, video, image, doc, etc.) |
+
 
 ---
 
