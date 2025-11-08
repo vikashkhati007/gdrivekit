@@ -12,6 +12,7 @@ import type {
   ListFilesResponse,
   ImageMediaMetadata,
   VideoMediaMetadata,
+  StorageQuota,
 } from "../types/index";
 
 export class GoogleDriveService {
@@ -478,6 +479,26 @@ export class GoogleDriveService {
       return {
         success: true,
         data: response.data as FileMetadata,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : "Unknown error",
+      };
+    }
+  }
+   /**
+   * Get storageQuota
+   */
+  public async getStorageQuota(): Promise<ApiResponse<StorageQuota>> {
+    try {
+      const response = await this.drive.about.get({
+        fields: "storageQuota",
+      });
+
+      return {
+        success: true,
+        data: response.data.storageQuota as StorageQuota,
       };
     } catch (error) {
       return {

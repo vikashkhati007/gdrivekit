@@ -224,6 +224,10 @@ export interface VideoMediaMetadata {
   durationMillis?: string;
 }
 
+export interface StorageQuota {
+  usage?: string;
+  limit?: string;
+}
 
 export interface ShortcutDetails {
   targetId?: string;
