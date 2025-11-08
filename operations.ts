@@ -222,6 +222,13 @@ export async function copyFile(fileId: string, newName?: string) {
 // readFileData for json files
 
 /**
+ * Create a new JSON file on Google Drive
+ */
+export async function createJsonFile(jsonContent: any, name: string) {
+  return await driveService.createJsonFile(JSON.stringify(jsonContent), name);
+}
+
+/**
  * Read JSON file content from Google Drive
  * @param fileId - Google Drive file ID
  */
@@ -970,6 +977,7 @@ export const driveOperations = {
   getVideoMetadata,
 
   //Json operations
+  createJsonFile,
   readJsonFileData,
   addJsonKeyValue,
   updateJsonFieldAndValues,

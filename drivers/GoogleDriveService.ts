@@ -486,6 +486,27 @@ export class GoogleDriveService {
       };
     }
   }
+  /**
+   * Create a JSON file on Google Drive
+   */
+  public async createJsonFile(jsonContent: string, name: string) {
+    const response = await this.drive.files.create({
+      requestBody: {
+        name: name,
+        mimeType: "application/json",
+      },
+      media: {
+        mimeType: "application/json",
+        body: jsonContent,
+      },
+      fields: "id, name, webViewLink, webContentLink",
+    });
+
+    return {
+      success: true,
+      data: response.data as FileMetadata,
+    };
+  }
 
   /**
    * Get complete file metadata including image/video metadata
@@ -562,7 +583,7 @@ export class GoogleDriveService {
    * Convert Regular File to Google Docs
    */
 
-   public async ConversionFunction(
+  public async ConversionFunction(
     fileId: string,
     targetMimeType: string
   ): Promise<ApiResponse<FileMetadata>> {
@@ -573,8 +594,10 @@ export class GoogleDriveService {
         fields: "id, name, mimeType",
       });
 
-      const sourceMime = originalFile.data.mimeType || "application/octet-stream";
-      const baseName = originalFile.data.name?.split(".")[0] || "Converted_File";
+      const sourceMime =
+        originalFile.data.mimeType || "application/octet-stream";
+      const baseName =
+        originalFile.data.name?.split(".")[0] || "Converted_File";
 
       let fileStream: any;
 
@@ -585,10 +608,23 @@ export class GoogleDriveService {
 
         // Define exportable formats for each Google type
         const exportableTargets: Record<string, string[]> = {
-          [MIME_TYPES.DOCUMENT]: [MIME_TYPES.PDF, MIME_TYPES.WORD, MIME_TYPES.TEXT],
-          [MIME_TYPES.SPREADSHEET]: [MIME_TYPES.PDF, MIME_TYPES.CSV, MIME_TYPES.EXCEL],
+          [MIME_TYPES.DOCUMENT]: [
+            MIME_TYPES.PDF,
+            MIME_TYPES.WORD,
+            MIME_TYPES.TEXT,
+          ],
+          [MIME_TYPES.SPREADSHEET]: [
+            MIME_TYPES.PDF,
+            MIME_TYPES.CSV,
+            MIME_TYPES.EXCEL,
+          ],
           [MIME_TYPES.PRESENTATION]: [MIME_TYPES.PDF, MIME_TYPES.POWERPOINT],
-          [MIME_TYPES.DRAWING]: [MIME_TYPES.PDF, MIME_TYPES.PNG, MIME_TYPES.JPEG, MIME_TYPES.SVG],
+          [MIME_TYPES.DRAWING]: [
+            MIME_TYPES.PDF,
+            MIME_TYPES.PNG,
+            MIME_TYPES.JPEG,
+            MIME_TYPES.SVG,
+          ],
         };
 
         // Validate export support

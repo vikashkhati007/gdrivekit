@@ -5,8 +5,12 @@ import { driveOperations } from "./operations";
 
 async function main(){
     initDriveService();
-    const converted = await driveOperations.convertDocsToPdf("1t7pu8oK14Ii-LMvfn2Rp-6hsyZiuSUwbkxHs_KOwPAs");
-    console.log(converted);
+    const gamer = [
+        {name: "Vikash", age: 25},
+        {name: "Ananya", age: 24},
+    ]
+    const converted = await driveOperations.createJsonFile(gamer, "nic.json");
+    console.log(converted); 
 }
 
 main();
