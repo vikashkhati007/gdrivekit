@@ -2,6 +2,57 @@ import { driveService } from "./drivers/services";
 import { MIME_TYPES, MimeType } from "./types/index";
 
 // ============================================
+// HELPER FUNCTIONS
+// ============================================
+
+/**
+ * Generic helper to search for items by name with optional type filtering
+ * @param name - Name to search for
+ * @param type - Optional: 'file' | 'folder' | 'exact' | 'contains'
+ * @param searchType - Optional: 'exact' | 'contains' (default: 'exact')
+ */
+async function searchByNameHelper(
+  name: string,
+  type?: 'file' | 'folder',
+  searchType: 'exact' | 'contains' = 'exact'
+) {
+  let query = searchType === 'exact' ? `name='${name}'` : `name contains '${name}'`;
+  
+  if (type === 'folder') {
+    query += ` and mimeType='${MIME_TYPES.FOLDER}'`;
+  } else if (type === 'file') {
+    query += ` and mimeType!='${MIME_TYPES.FOLDER}'`;
+  }
+  
+  query += ' and trashed=false';
+  
+  return await driveService.listFiles({ query });
+}
+
+/**
+ * Generic helper to get ID by name with optional type filtering
+ * @param name - Name to search for
+ * @param type - Optional: 'file' | 'folder'
+ */
+async function getIdByNameHelper(
+  name: string,
+  type?: 'file' | 'folder'
+): Promise<{ success: boolean; id?: string; item?: any; error?: string }> {
+  const result = await searchByNameHelper(name, type, 'exact');
+  
+  if (result.success && result.data?.files.length) {
+    const item = result.data.files[0];
+    return {
+      success: true,
+      id: item.id,
+      item,
+    };
+  }
+
+  return { success: false, error: `${type ? type.charAt(0).toUpperCase() + type.slice(1) : 'Item'} not found` };
+}
+
+// ============================================
 // FILE OPERATIONS
 // ============================================
 
@@ -127,14 +178,16 @@ export async function moveFile(fileId: string, newFolderId: string) {
 }
 
 export async function moveFileByName(fileName: string, folderName: string) {
-  // Resolve file ID by name
-  const fileResult = await getFileIdByName(fileName);
+  // Resolve file and folder IDs by name in parallel for better performance
+  const [fileResult, folderResult] = await Promise.all([
+    getFileIdByName(fileName),
+    getFolderIdByName(folderName)
+  ]);
+
   if (!fileResult.success || !fileResult.fileId) {
     return { success: false, error: "File not found" };
   }
 
-  // Resolve folder ID by name
-  const folderResult = await getFolderIdByName(folderName);
   if (!folderResult.success || !folderResult.folderId) {
     return { success: false, error: "Destination folder not found" };
   }
@@ -383,9 +436,7 @@ export async function deleteFolder(folderId: string) {
  * @param folderName - Name of the folder
  */
 export async function listFoldersByName(folderName: string) {
-  return await driveService.listFiles({
-    query: `name='${folderName}' and mimeType='${MIME_TYPES.FOLDER}' and trashed=false`,
-  });
+  return await searchByNameHelper(folderName, 'folder', 'exact');
 }
 
 /**
@@ -426,9 +477,7 @@ export async function listFilesInFolder(folderId: string) {
  * @param fileName - Name or partial name to search
  */
 export async function searchByName(fileName: string) {
-  return await driveService.listFiles({
-    query: `name contains '${fileName}' and trashed=false`,
-  });
+  return await searchByNameHelper(fileName, 'file', 'contains');
 }
 
 /**
@@ -436,9 +485,7 @@ export async function searchByName(fileName: string) {
  * @param fileName - Exact file name
  */
 export async function searchByExactName(fileName: string) {
-  return await driveService.listFiles({
-    query: `name='${fileName}' and trashed=false`,
-  });
+  return await searchByNameHelper(fileName, 'file', 'exact');
 }
 
 /**
@@ -679,24 +726,29 @@ export async function fileExists(fileName: string): Promise<boolean> {
 }
 
 /**
+ * Get Storage Quota
+ */
+
+export async function getStorageQuota() {
+  return await driveService.getStorageQuota();
+}
+
+/**
  * Get folder ID by name
  * @param folderName - Folder name to find
  */
 export async function getFolderIdByName(folderName: string) {
-  const result = await driveService.listFiles({
-    query: `name='${folderName}' and mimeType='${MIME_TYPES.FOLDER}' and trashed=false`,
-    pageSize: 1,
-  });
-
-  if (result.success && result.data?.files.length) {
+  const result = await getIdByNameHelper(folderName, 'folder');
+  
+  if (result.success) {
     return {
       success: true,
-      folderId: result.data.files[0]?.id || "",
-      folder: result.data.files[0],
+      folderId: result.id || "",
+      folder: result.item,
     };
   }
 
-  return { success: false, error: "Folder not found" };
+  return { success: false, error: result.error };
 }
 
 /**
@@ -704,17 +756,17 @@ export async function getFolderIdByName(folderName: string) {
  * @param fileName - File name to find
  */
 export async function getFileIdByName(fileName: string) {
-  const result = await searchByExactName(fileName);
-
-  if (result.success && result.data?.files.length) {
+  const result = await getIdByNameHelper(fileName, 'file');
+  
+  if (result.success) {
     return {
       success: true,
-      fileId: result.data.files[0]?.id || "",
-      file: result.data.files[0],
+      fileId: result.id || "",
+      file: result.item,
     };
   }
 
-  return { success: false, error: "File not found" };
+  return { success: false, error: result.error };
 }
 
 // ============================================
@@ -738,6 +790,7 @@ export const driveOperations = {
   // MetaData Operation
   getImageMetadata,
   getVideoMetadata,
+
   //Json operations
   readJsonFileData,
   addJsonKeyValue,
@@ -766,6 +819,13 @@ export const driveOperations = {
   listRecentFiles,
   listPDFs,
   listImages,
+  listVideos,
+  listAudios,
+  listArchives,
+  listJSONs,
+  listSheets,
+  listPresentations,
+  listDocs,
 
   // Batch operations
   uploadMultipleFiles,
@@ -774,6 +834,7 @@ export const driveOperations = {
 
   // Utility operations
   fileExists,
+  getStorageQuota,
   getFolderIdByName,
   getFileIdByName,
 };

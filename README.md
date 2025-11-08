@@ -59,8 +59,7 @@ After that, you **don’t need to call it again** unless you delete your tokens 
 Once tokens are generated, you can initialize the Google Drive service and perform file operations:
 
 ```ts
-import { operations } from "gdrivekit";
-import { initDriveService } from "./drivers/services";
+import { initDriveService, operations } from "gdrivekit";
 
 async function main() {
   initDriveService();
@@ -81,14 +80,13 @@ main();
 
 | Method             | Description                               |
 | ------------------ | ----------------------------------------- |
+| `readFileData()`   | Read file content                         |
 | `uploadFile()`     | Upload a new file to Google Drive         |
 | `downloadFile()`   | Download a file from Drive                |
 | `deleteFile()`     | Permanently delete a file                 |
 | `renameFile()`     | Rename an existing file                   |
 | `updateFile()`     | Update file metadata or content           |
 | `getFileInfo()`    | Get details of a specific file            |
-| `getImageMetadata()` | Get image metadata (EXIF data, dimensions, etc.) |
-| `getVideoMetadata()` | Get video metadata (duration, dimensions, etc.) |
 | `getCompleteFileInfo()` | Get complete file metadata including all fields |
 | `moveFile()`       | Move file to another folder using file ID |
 | `moveFileByName()` | Move file by its name                     |
@@ -108,7 +106,7 @@ main();
 | --------------------- | --------------------------------------- |
 | `createFolder()`      | Create a new folder                     |
 | `deleteFolder()`      | Delete an existing folder               |
-| `listFoldersByName()` | List all folders with a specific name |
+| `listFoldersByName()` | List all folders with a specific name   |
 | `listAllFolders()`    | List all folders in Drive               |
 | `listFilesInFolder()` | List all files within a specific folder |
 | `listFoldersInFolder()` | List all folders within a specific folder |
@@ -145,8 +143,6 @@ main();
 | `listPresentations()`| List all presentation files           |
 | `listDocs()`        | List all docs files                   |
 
-
-
 ---
 
 ### 🧩 **Batch Operations**
@@ -164,6 +160,7 @@ main();
 | Method                | Description                 |
 | --------------------- | --------------------------- |
 | `fileExists()`        | Check if a file exists      |
+| `getStorageQuota()`   | Get storage quota information |
 | `getFolderIdByName()` | Fetch folder ID by its name |
 | `getFileIdByName()`   | Fetch file ID by its name   |
 
@@ -176,6 +173,8 @@ main();
 | `addJsonKeyValue()`     | Add a new key-value pair to a JSON file   |
 | `updateJsonFieldAndValues()`     | Update an existing field in a JSON file   |
 | `deleteJsonFieldAndKeys()`     | Delete a field from a JSON file           |
+
+---
 
 ### ⚡ Example: Upload a File
 
