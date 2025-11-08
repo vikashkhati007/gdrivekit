@@ -2,17 +2,18 @@ import { google, Auth } from "googleapis";
 import { drive_v3 } from "googleapis";
 import * as fs from "fs";
 import * as path from "path";
-import type {
-  GoogleCredentials,
-  TokenData,
-  ListFilesParams,
-  UploadFileMetadata,
-  ApiResponse,
-  FileMetadata,
-  ListFilesResponse,
-  ImageMediaMetadata,
-  VideoMediaMetadata,
-  StorageQuota,
+import {
+  type GoogleCredentials,
+  type TokenData,
+  type ListFilesParams,
+  type UploadFileMetadata,
+  type ApiResponse,
+  type FileMetadata,
+  type ListFilesResponse,
+  type ImageMediaMetadata,
+  type VideoMediaMetadata,
+  type StorageQuota,
+  MIME_TYPES,
 } from "../types/index";
 
 export class GoogleDriveService {
@@ -57,6 +58,28 @@ export class GoogleDriveService {
     });
   }
 
+  /**
+   * Get File
+   */
+  public async getFile(fileId: string): Promise<ApiResponse<FileMetadata>> {
+    try {
+      const response = await this.drive.files.get({
+        fileId: fileId,
+        fields:
+          "id, name, mimeType, size, createdTime, modifiedTime, parents, webViewLink",
+      });
+
+      return {
+        success: true,
+        data: response.data as FileMetadata,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : "Unknown error",
+      };
+    }
+  }
   /**
    * Read file data directly (returns Buffer or text)
    */
@@ -487,7 +510,7 @@ export class GoogleDriveService {
       };
     }
   }
-   /**
+  /**
    * Get storageQuota
    */
   public async getStorageQuota(): Promise<ApiResponse<StorageQuota>> {
@@ -504,6 +527,117 @@ export class GoogleDriveService {
       return {
         success: false,
         error: error instanceof Error ? error.message : "Unknown error",
+      };
+    }
+  }
+  /**
+   * Share File
+   */
+  public async shareFile(
+    fileId: string,
+    emailAddress: string,
+    role: string = "reader"
+  ): Promise<ApiResponse<void>> {
+    try {
+      await this.drive.permissions.create({
+        fileId: fileId,
+        requestBody: {
+          type: "user",
+          role: role,
+          emailAddress: emailAddress,
+        },
+      });
+      return {
+        success: true,
+        data: undefined,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : "Unknown error",
+      };
+    }
+  }
+  /**
+   * Convert Regular File to Google Docs
+   */
+
+   public async ConversionFunction(
+    fileId: string,
+    targetMimeType: string
+  ): Promise<ApiResponse<FileMetadata>> {
+    try {
+      // Step 1: Get file metadata
+      const originalFile = await this.drive.files.get({
+        fileId,
+        fields: "id, name, mimeType",
+      });
+
+      const sourceMime = originalFile.data.mimeType || "application/octet-stream";
+      const baseName = originalFile.data.name?.split(".")[0] || "Converted_File";
+
+      let fileStream: any;
+
+      // Step 2: Handle different Google file types
+      if (sourceMime.startsWith("application/vnd.google-apps.")) {
+        // 🧠 Smart Export logic for Google native files
+        console.log("🧾 Exporting Google Editor file...");
+
+        // Define exportable formats for each Google type
+        const exportableTargets: Record<string, string[]> = {
+          [MIME_TYPES.DOCUMENT]: [MIME_TYPES.PDF, MIME_TYPES.WORD, MIME_TYPES.TEXT],
+          [MIME_TYPES.SPREADSHEET]: [MIME_TYPES.PDF, MIME_TYPES.CSV, MIME_TYPES.EXCEL],
+          [MIME_TYPES.PRESENTATION]: [MIME_TYPES.PDF, MIME_TYPES.POWERPOINT],
+          [MIME_TYPES.DRAWING]: [MIME_TYPES.PDF, MIME_TYPES.PNG, MIME_TYPES.JPEG, MIME_TYPES.SVG],
+        };
+
+        // Validate export support
+        const allowedTargets = exportableTargets[sourceMime];
+        if (!allowedTargets || !allowedTargets.includes(targetMimeType)) {
+          return {
+            success: false,
+            error: `Export from ${sourceMime} to ${targetMimeType} not supported by Google Drive API.`,
+          };
+        }
+
+        // Export as stream
+        const exportResponse = await this.drive.files.export(
+          { fileId, mimeType: targetMimeType },
+          { responseType: "stream" }
+        );
+        fileStream = exportResponse.data;
+      } else {
+        // 🔽 Binary file download
+        console.log("📦 Downloading binary file...");
+        const downloadResponse = await this.drive.files.get(
+          { fileId, alt: "media" },
+          { responseType: "stream" }
+        );
+        fileStream = downloadResponse.data;
+      }
+
+      // Step 3: Upload new converted file
+      const uploadResponse = await this.drive.files.create({
+        requestBody: {
+          name: `${baseName}_converted`,
+          mimeType: targetMimeType,
+        },
+        media: {
+          mimeType: sourceMime,
+          body: fileStream,
+        },
+        fields: "id, name, mimeType, webViewLink, modifiedTime",
+      });
+
+      return {
+        success: true,
+        data: uploadResponse.data as FileMetadata,
+      };
+    } catch (error: any) {
+      console.error("❌ Conversion Error:", error?.message || error);
+      return {
+        success: false,
+        error: error?.message || "Conversion failed",
       };
     }
   }

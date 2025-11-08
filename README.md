@@ -159,6 +159,7 @@ main();
 
 | Method                | Description                 |
 | --------------------- | --------------------------- |
+| `shareFile()`        | Share a file with a user      |
 | `fileExists()`        | Check if a file exists      |
 | `getStorageQuota()`   | Get storage quota information |
 | `getFolderIdByName()` | Fetch folder ID by its name |
@@ -167,12 +168,35 @@ main();
 ---
 
 ### ❴❵ **Json Operation**
+
 | Method                  | Description                               |
 | ----------------------- | ----------------------------------------- |
 | `readJsonFileData()`    | Read JSON file content                    |
 | `addJsonKeyValue()`     | Add a new key-value pair to a JSON file   |
 | `updateJsonFieldAndValues()`     | Update an existing field in a JSON file   |
 | `deleteJsonFieldAndKeys()`     | Delete a field from a JSON file           |
+
+---
+
+### ⚞ **Conversion Operation**
+
+| Method                  | Description                                               |
+| ----------------------- | --------------------------------------------------------- |
+| `convertTextToDocs()`   | Convert a text file (`.txt`) to Google Docs format        |
+| `convertDocsToPdf()`    | Convert a Google Docs file to PDF                         |
+| `convertDocsToWord()`   | Convert a Google Docs file to Microsoft Word (`.docx`)    |
+| `convertDocsToText()`   | Convert a Google Docs file to plain text (`.txt`)         |
+| `convertCsvToSheet()`   | Convert a CSV file to Google Sheets                       |
+| `convertExcelToSheet()` | Convert an Excel file (`.xlsx`) to Google Sheets          |
+| `convertSheetToCsv()`   | Convert a Google Sheet to CSV                             |
+| `convertSheetToPdf()`   | Convert a Google Sheet to PDF                             |
+| `convertPptToSlides()`  | Convert a PowerPoint file (`.pptx`) to Google Slides      |
+| `convertSlidesToPpt()`  | Convert a Google Slides file to PowerPoint (`.pptx`)      |
+| `convertSlidesToPdf()`  | Convert a Google Slides file to PDF                       |
+| `convertPdfToDocs()`    | Convert a PDF file to Google Docs (with OCR if supported) |
+| `convertDrawingToPng()` | Convert a Google Drawing to PNG image                     |
+| `convertDrawingToPdf()` | Convert a Google Drawing to PDF                           |
+
 
 ---
 
