@@ -1,3 +1,4 @@
+import { GoogleDriveService } from "./drivers/GoogleDriveService";
 import { driveService } from "./drivers/services";
 import { FileMetadata, MIME_TYPES, MimeType } from "./types/index";
 
@@ -765,6 +766,42 @@ export async function downloadMultipleFiles(
 
 /**
  * Check if file exists by name
+ * @param service - Google Drive service instance
+ * @param folderId - Folder ID to zip
+ * @param zipName - Name of the zip file to create
+ * @param uploadToFolderId - Optional: Upload zip to specific folder
+ * @param password - Optional: Password to encrypt zip
+ */
+export async function folderToZip(
+  service: GoogleDriveService,
+  folderId: string,
+  zipName: string,
+  uploadToFolderId?: string,
+  password?: string
+) {
+  return await service.folderToZip(folderId, zipName, uploadToFolderId, password);
+}
+
+/**
+ * Create a zip file from multiple files
+ * @param service - Google Drive service instance
+ * @param fileIds - Array of file IDs to zip
+ * @param zipName - Name of the zip file to create
+ * @param uploadToFolderId - Optional: Upload zip to specific folder
+ * @param password - Optional: Password to encrypt zip
+ */
+export async function filesToZip(
+  service: GoogleDriveService,
+  fileIds: string[],
+  zipName: string,
+  uploadToFolderId?: string,
+  password?: string
+) {
+  return await service.filesToZip(fileIds, zipName, uploadToFolderId, password);
+}
+
+/**
+ * Check if file exists by name
  * @param fileName - File name to check
  */
 export async function fileExists(fileName: string): Promise<boolean> {
@@ -1062,6 +1099,8 @@ export const driveOperations = {
   downloadMultipleFiles,
 
   // Utility operations
+  folderToZip,
+  filesToZip,
   shareFile,
   fileExists,
   getStorageQuota,
@@ -1074,18 +1113,15 @@ export const driveOperations = {
   convertDocsToPdf,
   convertDocsToWord,
   convertDocsToText,
-
   convertCsvToSheet,
   convertExcelToSheet,
   convertSheetToCsv,
   convertSheetToPdf,
-
   convertPptToSlides,
   convertSlidesToPpt,
   convertSlidesToPdf,
-
   convertPdfToDocs,
-
   convertDrawingToPng,
   convertDrawingToPdf,
+  
 };

@@ -7,12 +7,12 @@
 
 ### 🚀 Features
 
-* 📂 Upload, download, and manage Google Drive files
-* 🗂️ Create and organize folders
-* 🔍 Powerful search and filter utilities
-* ⚙️ Batch file operations
-* ⚡ Minimal setup, lightweight, and easy to use
-* 💡 Works with Node.js and Bun
+- 📂 Upload, download, and manage Google Drive files
+- 🗂️ Create and organize folders
+- 🔍 Powerful search and filter utilities
+- ⚙️ Batch file operations
+- ⚡ Minimal setup, lightweight, and easy to use
+- 💡 Works with Node.js and Bun
 
 ---
 
@@ -67,6 +67,8 @@ async function main() {
   // Example: Search files by name
   const files = await operations.searchByName("test");
   console.log(files.data?.files);
+
+  // Like that you can use more operations...
 }
 
 main();
@@ -78,27 +80,27 @@ main();
 
 ### 📁 **File Operations**
 
-| Method             | Description                               |
-| ------------------ | ----------------------------------------- |
-| `readFileData()`   | Read file content                         |
-| `uploadFile()`     | Upload a new file to Google Drive         |
-| `downloadFile()`   | Download a file from Drive                |
-| `deleteFile()`     | Permanently delete a file                 |
-| `renameFile()`     | Rename an existing file                   |
-| `updateFile()`     | Update file metadata or content           |
-| `getFileInfo()`    | Get details of a specific file            |
-| `getFileIdByName()`   | Fetch file ID by its name              |
+| Method                  | Description                                     |
+| ----------------------- | ----------------------------------------------- |
+| `readFileData()`        | Read file content                               |
+| `uploadFile()`          | Upload a new file to Google Drive               |
+| `downloadFile()`        | Download a file from Drive                      |
+| `deleteFile()`          | Permanently delete a file                       |
+| `renameFile()`          | Rename an existing file                         |
+| `updateFile()`          | Update file metadata or content                 |
+| `getFileInfo()`         | Get details of a specific file                  |
+| `getFileIdByName()`     | Fetch file ID by its name                       |
 | `getCompleteFileInfo()` | Get complete file metadata including all fields |
-| `moveFile()`       | Move file to another folder using file ID |
-| `moveFileByName()` | Move file by its name                     |
-| `copyFile()`       | Make a copy of a file in Drive            |
+| `moveFile()`            | Move file to another folder using file ID       |
+| `moveFileByName()`      | Move file by its name                           |
+| `copyFile()`            | Make a copy of a file in Drive                  |
 
 ---
 
 ### 🗂️ **Metadata Operations**
 
-| Method                | Description                             |
-| --------------------- | --------------------------------------- |
+| Method               | Description                                      |
+| -------------------- | ------------------------------------------------ |
 | `getImageMetadata()` | Get image metadata (EXIF data, dimensions, etc.) |
 | `getVideoMetadata()` | Get video metadata (duration, dimensions, etc.)  |
 
@@ -106,14 +108,14 @@ main();
 
 ### 🗂️ **Folder Operations**
 
-| Method                | Description                             |
-| --------------------- | --------------------------------------- |
-| `createFolder()`      | Create a new folder                     |
-| `deleteFolder()`      | Delete an existing folder               |
-| `getFolderIdByName()` | Fetch folder ID by its name             |
-| `listFoldersByName()` | List all folders with a specific name   |
-| `listAllFolders()`    | List all folders in Drive               |
-| `listFilesInFolder()` | List all files within a specific folder |
+| Method                  | Description                               |
+| ----------------------- | ----------------------------------------- |
+| `createFolder()`        | Create a new folder                       |
+| `deleteFolder()`        | Delete an existing folder                 |
+| `getFolderIdByName()`   | Fetch folder ID by its name               |
+| `listFoldersByName()`   | List all folders with a specific name     |
+| `listAllFolders()`      | List all folders in Drive                 |
+| `listFilesInFolder()`   | List all files within a specific folder   |
 | `listFoldersInFolder()` | List all folders within a specific folder |
 
 ---
@@ -134,19 +136,19 @@ main();
 
 ### 📋 **List Operations**
 
-| Method              | Description                           |
-| ------------------- | ------------------------------------- |
-| `listFiles()`       | List all files in Drive               |
-| `listRecentFiles()` | List recently modified or added files |
-| `listPDFs()`        | List all PDF files                    |
-| `listImages()`      | List all image files                  |
-| `listVideos()`      | List all video files                  |
-| `listAudios()`      | List all audio files                  |
-| `listArchives()`    | List all archive files                |
-| `listJSONs()`       | List all json files                   |
-| `listSheets()`      | List all sheet files                  |
-| `listPresentations()`| List all presentation files           |
-| `listDocs()`        | List all docs files                   |
+| Method                | Description                           |
+| --------------------- | ------------------------------------- |
+| `listFiles()`         | List all files in Drive               |
+| `listRecentFiles()`   | List recently modified or added files |
+| `listPDFs()`          | List all PDF files                    |
+| `listImages()`        | List all image files                  |
+| `listVideos()`        | List all video files                  |
+| `listAudios()`        | List all audio files                  |
+| `listArchives()`      | List all archive files                |
+| `listJSONs()`         | List all json files                   |
+| `listSheets()`        | List all sheet files                  |
+| `listPresentations()` | List all presentation files           |
+| `listDocs()`          | List all docs files                   |
 
 ---
 
@@ -162,27 +164,28 @@ main();
 
 ### 🧰 **Utility Operations**
 
-| Method                | Description                 |
-| --------------------- | --------------------------- |
-| `shareFile()`        | Share a file with a user      |
-| `fileExists()`        | Check if a file exists      |
-| `getStorageQuota()`   | Get storage quota information |
-| `createStream()`      | Create stream for any Google Drive file (audio, video, image, doc, etc.) |
-
+| Method              | Description                                                              |
+| ------------------- | ------------------------------------------------------------------------ |
+| `shareFile()`       | Share a file with a user                                                 |
+| `fileExists()`      | Check if a file exists                                                   |
+| `getStorageQuota()` | Get storage quota information                                            |
+| `folderToZip()`     | Create a zip archive of a folder                                         |
+| `filesToZip()`      | Create a zip archive of multiple files                                   |
+| `createStream()`    | Create stream for any Google Drive file (audio, video, image, doc, etc.) |
 
 ---
 
 ### ❴❵ **Json Operation**
 
-| Method                  | Description                               |
-| ----------------------- | ----------------------------------------- |
-| `createJsonFile()`      | Create a new JSON file                    |
-| `readJsonFileData()`    | Read JSON file content                    |
-| `addJsonKeyValue()`     | Add a new key-value pair to a JSON file   |
-| `pushJsonObjectToArray()`     | Push a new object to a JSON array field   |
-| `updateJsonFieldAndValues()`     | Update an existing field in a JSON file   |
-| `selectJsonFieldAndValues()`     | Select an existing field in a JSON file   |
-| `deleteJsonFieldAndKeys()`     | Delete a field from a JSON file           |
+| Method                       | Description                             |
+| ---------------------------- | --------------------------------------- |
+| `createJsonFile()`           | Create a new JSON file                  |
+| `readJsonFileData()`         | Read JSON file content                  |
+| `addJsonKeyValue()`          | Add a new key-value pair to a JSON file |
+| `pushJsonObjectToArray()`    | Push a new object to a JSON array field |
+| `updateJsonFieldAndValues()` | Update an existing field in a JSON file |
+| `selectJsonFieldAndValues()` | Select an existing field in a JSON file |
+| `deleteJsonFieldAndKeys()`   | Delete a field from a JSON file         |
 
 ---
 
@@ -204,64 +207,6 @@ main();
 | `convertPdfToDocs()`    | Convert a PDF file to Google Docs (with OCR if supported) |
 | `convertDrawingToPng()` | Convert a Google Drawing to PNG image                     |
 | `convertDrawingToPdf()` | Convert a Google Drawing to PDF                           |
-
-
----
-
-### ⚡ Example: Upload a File
-
-```ts
-await operations.uploadFile({
-  name: "report.pdf",
-  path: "./files/report.pdf",
-  mimeType: "application/pdf",
-});
-```
-
----
-
-### ⚡ Example: Search and Download
-
-```ts
-const files = await operations.searchByName("invoice");
-if (files?.data?.files?.length) {
-  await operations.downloadFile(files.data.files[0].id, "./downloads/invoice.pdf");
-}
-```
-
----
-
-### ⚡ Example: Add a Key-Value Pair to a JSON File
-
-```ts
-const fileId = "1234567890abcdef1234567890abcdef";
-const addResult = await operations.addJsonKeyValue(
-  fileId,
-  "alive",
-  true
-);
-
-if (addResult.success) {
-  console.log("✅ Added new key-value pair successfully");
-} else {
-  console.error("❌ Failed:", addResult.error);
-}
-```
-
----
-
-### ⚡ Example: Get Metadata
-
-```ts
-const fileId = "1234567890abcdef1234567890abcdef";
-const metadataResult = await operations.getImageMetadata(fileId);
-
-if (metadataResult.success) {
-  console.log("✅ Image Metadata:", metadataResult.data);
-} else {
-  console.error("❌ Failed:", metadataResult.error);
-}
-```
 
 ---
 
