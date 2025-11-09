@@ -1,14 +1,16 @@
 {
   "name": "gdrivekit",
-  "version": "1.1.2",
-  "description": "A lightweight Google Drive toolkit for File Management. Handle Google Drive operations easily — upload, download, and other file operations in a few lines of code.",
+  "version": "1.1.8",
+  "description": "A lightweight Google Drive toolkit for effortless file management — handle uploads, downloads, and Drive operations in just a few lines of code.",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
     "dev": "bun run index.ts",
     "build": "bun build ./index.ts --outdir dist --target node",
-    "prepublishOnly": "bun run build"
+    "types": "tsc --emitDeclarationOnly --outDir dist",
+    "prepare": "bun run types && bun run build",
+    "prepublishOnly": "bun run prepare"
   },
   "keywords": [
     "google-drive",
@@ -23,7 +25,10 @@
     "google drive automation",
     "gdrivekit"
   ],
-  "author": "Vikash Khati",
+  "author": {
+    "name": "Vikash Khati",
+    "url": "https://github.com/vikashkhati007"
+  },
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -34,20 +39,23 @@
     "url": "https://github.com/vikashkhati007/gdrivekit/issues"
   },
   "dependencies": {
-    "@types/archiver": "^7.0.0",
-    "@types/update-notifier": "^6.0.8",
     "archiver": "^7.0.1",
     "archiver-zip-encrypted": "^2.0.0",
     "googleapis": "^164.1.0",
     "update-notifier": "^7.3.1"
   },
-  "peerDependencies": {
-    "typescript": "^5"
-  },
   "devDependencies": {
-    "@types/node": "latest"
+    "@types/node": "latest",
+    "@types/archiver": "^7.0.0",
+    "@types/update-notifier": "^6.0.8",
+    "typescript": "^5.6.3"
   },
   "files": [
-    "dist"
-  ]
+    "dist",
+    "types"
+  ],
+  "engines": {
+    "node": ">=18.0.0",
+    "bun": ">=1.1.0"
+  }
 }

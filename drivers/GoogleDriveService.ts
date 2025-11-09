@@ -3,18 +3,18 @@ import { drive_v3 } from "googleapis";
 import * as fs from "fs";
 import * as path from "path";
 import {
-  type GoogleCredentials,
-  type TokenData,
-  type ListFilesParams,
-  type UploadFileMetadata,
-  type ApiResponse,
-  type FileMetadata,
-  type ListFilesResponse,
-  type ImageMediaMetadata,
-  type VideoMediaMetadata,
-  type StorageQuota,
-  MIME_TYPES,
+  GoogleCredentials,
+  TokenData,
+  ListFilesParams,
+  UploadFileMetadata,
+  ApiResponse,
+  FileMetadata,
+  ListFilesResponse,
+  ImageMediaMetadata,
+  VideoMediaMetadata,
+  StorageQuota,
 } from "../types/index";
+import { MIME_TYPES } from "../const/index";
 import archiver from "archiver";
 import archiverZipEncrypted from "archiver-zip-encrypted";
 import { Readable, PassThrough } from "stream";
@@ -818,161 +818,50 @@ export class GoogleDriveService {
   /**
    * Zip a Google Drive folder (recursive, optional password, same-level saving)
    */
-  public async folderToZip(
-    folderId: string,
-    zipName: string,
-    uploadToFolderId?: string,
-    password?: string
-  ): Promise<ApiResponse<{ id: string; name: string; webViewLink: string }>> {
-    try {
-      console.log("🟢 Starting folderToZip...");
-
-      // 🔍 Step 1: find parent folder if not provided
-      let parentFolderId = uploadToFolderId;
-      if (!parentFolderId) {
-        const folderInfo = await this.drive.files.get({
-          fileId: folderId,
-          fields: "parents",
-        });
-        const parents = folderInfo.data.parents;
-        if (!parents || parents.length === 0) {
-          throw new Error("⚠️ No parent folder found for given folder.");
-        }
-        parentFolderId = parents[0];
-      }
-
-      // 🧩 Step 2: create PassThrough stream and archive
-      const passThrough = new PassThrough();
-      const archive = archiver(
-        (password ? "zip-encrypted" : "zip") as archiver.Format,
-        {
-          zlib: { level: 9 },
-          //@ts-ignore
-          encryptionMethod: password ? "aes256" : undefined,
-          password: password || undefined,
-        }
-      );
-
-      archive.pipe(passThrough);
-
-      // 🔁 Step 3: recursively add files/folders
-      const addFolderToArchive = async (folderId: string, currentPath = "") => {
-        const res = await this.drive.files.list({
-          q: `'${folderId}' in parents and trashed=false`,
-          fields: "files(id, name, mimeType)",
-        });
-
-        const files = res.data.files || [];
-        if (!files.length) return;
-
-        for (const file of files) {
-          if (file.mimeType === "application/vnd.google-apps.folder") {
-            await addFolderToArchive(file.id!, `${currentPath}${file.name}/`);
-            continue;
-          }
-
-          const fileStream = await this.createStream(file.id!);
-          if (!fileStream) continue;
-
-          const nodeStream =
-            fileStream instanceof Readable
-              ? fileStream
-              : Readable.fromWeb(fileStream as any);
-
-          archive.append(nodeStream, { name: `${currentPath}${file.name}` });
-        }
-      };
-
-      console.log("🟢 Adding folder contents...");
-      await addFolderToArchive(folderId);
-
-      console.log("🟢 Finalizing archive...");
-
-      // 🚀 Step 4: Start upload to Drive and wait for both
-      const uploadPromise = this.drive.files.create({
-        requestBody: {
-          name: zipName.endsWith(".zip") ? zipName : `${zipName}.zip`,
-          parents: [parentFolderId],
-        },
-        media: {
-          mimeType: "application/zip",
-          body: passThrough,
-        },
-        fields: "id, name, webViewLink",
-      });
-
-      // 🧠 Ensure finalize & upload sync correctly
-      await new Promise<void>((resolve, reject) => {
-        archive.on("error", reject);
-        passThrough.on("error", reject);
-        passThrough.on("finish", resolve);
-        archive.finalize().catch(reject);
-      });
-
-      // Wait for Drive upload response
-      const uploadRes = await uploadPromise;
-
-      console.log(
-        `✅ Folder zipped & uploaded successfully: ${
-          uploadRes.data.webViewLink
-        } ${password ? "(🔐 password protected)" : ""}`
-      );
-
-      return {
-        success: true,
-        data: {
-          id: uploadRes.data.id!,
-          name: uploadRes.data.name!,
-          webViewLink: uploadRes.data.webViewLink!,
-        },
-      };
-    } catch (error: any) {
-      console.error("❌ folderToZip failed:", error.message);
-      return {
-        success: false,
-        error: error.message || "Unknown error",
-      };
+ public async convertFilesAndFoldersToZip(
+    options: {
+      folderId?: string;
+      fileIds?: string[];
+      zipName: string;
+      uploadToFolderId?: string;
+      password?: string;
     }
-  }
-
-  /**
-   * Zip multiple Google Drive files into one ZIP and upload to Drive
-   */
-  public async filesToZip(
-    fileIds: string[],
-    zipName: string,
-    uploadToFolderId?: string,
-    password?: string
   ): Promise<ApiResponse<{ id: string; name: string; webViewLink: string }>> {
     try {
-      console.log("🟢 Starting filesToZip...");
+      console.log("🟢 Starting convertFilesAndFoldersToZip...");
 
-      if (!fileIds || fileIds.length === 0) {
-        throw new Error("⚠️ No file IDs provided.");
+      const { folderId, fileIds = [], zipName, uploadToFolderId, password } = options;
+
+      // 🛑 Allow only one: either folder OR files
+      if (folderId && fileIds.length > 0) {
+        throw new Error("⚠️ You can select either a folder OR multiple files, not both.");
       }
 
-      // 🧩 Step 1: Find parent folder if destination not provided
+      if (!folderId && fileIds.length === 0) {
+        throw new Error("⚠️ Please select a folder or files to zip.");
+      }
+
+      // 🔍 Step 1: Find parent folder for upload
       let parentFolderId = uploadToFolderId;
       if (!parentFolderId) {
-        // Use first file's parent as default upload location
-        const firstFile = await this.drive.files.get({
-          fileId: fileIds[0],
+        const referenceId = folderId || fileIds[0];
+        const info = await this.drive.files.get({
+          fileId: referenceId,
           fields: "parents",
         });
-        const parents = firstFile.data.parents;
+        const parents = info.data.parents;
         if (!parents || parents.length === 0) {
           throw new Error("⚠️ Could not determine parent folder.");
         }
         parentFolderId = parents[0];
       }
 
-      // 🧠 Step 2: Create archive and streaming pipe
+      // 🧩 Step 2: Create zip archive stream
       const passThrough = new PassThrough();
       const archive = archiver(
-        (password ? "zip-encrypted" : "zip") as archiver.Format,
+        (password ? "zip-encrypted" : "zip") as any,
         {
           zlib: { level: 9 },
-          //@ts-ignore
           encryptionMethod: password ? "aes256" : undefined,
           password,
         }
@@ -980,33 +869,59 @@ export class GoogleDriveService {
 
       archive.pipe(passThrough);
 
-      // 🔁 Step 3: Stream all files and append to archive
-      for (const fileId of fileIds) {
-        const fileMeta = await this.drive.files.get({
-          fileId,
-          fields: "id, name, mimeType",
+      // Helper: add folder contents recursively
+      const addFolderToArchive = async (id: string, currentPath = "") => {
+        const res = await this.drive.files.list({
+          q: `'${id}' in parents and trashed=false`,
+          fields: "files(id, name, mimeType)",
         });
 
-        const fileName = fileMeta.data.name || `file_${fileId}`;
-        const fileStream = await this.createStream(fileId);
+        const files = res.data.files || [];
+        for (const file of files) {
+          if (file.mimeType === "application/vnd.google-apps.folder") {
+            await addFolderToArchive(file.id!, `${currentPath}${file.name}/`);
+          } else {
+            const stream = await this.createStream(file.id!);
+            if (!stream) continue;
 
-        if (!fileStream) {
-          console.warn(`⚠️ Skipping file: ${fileName} (stream not available)`);
-          continue;
+            const nodeStream =
+              stream instanceof Readable
+                ? stream
+                : Readable.fromWeb(stream as any);
+
+            archive.append(nodeStream, { name: `${currentPath}${file.name}` });
+            console.log(`📦 Added: ${currentPath}${file.name}`);
+          }
         }
+      };
 
-        const nodeStream =
-          fileStream instanceof Readable
-            ? fileStream
-            : Readable.fromWeb(fileStream as any);
+      // 🗂 Step 3: Add folder or files
+      if (folderId) {
+        console.log("📁 Zipping folder...");
+        await addFolderToArchive(folderId);
+      } else {
+        console.log("📄 Zipping multiple files...");
+        for (const fileId of fileIds) {
+          const meta = await this.drive.files.get({
+            fileId,
+            fields: "id, name",
+          });
 
-        archive.append(nodeStream, { name: fileName });
-        console.log(`📦 Added: ${fileName}`);
+          const name = meta.data.name || `file_${fileId}`;
+          const stream = await this.createStream(fileId);
+          if (!stream) continue;
+
+          const nodeStream =
+            stream instanceof Readable
+              ? stream
+              : Readable.fromWeb(stream as any);
+
+          archive.append(nodeStream, { name });
+          console.log(`📦 Added file: ${name}`);
+        }
       }
 
-      console.log("🟢 Finalizing ZIP...");
-
-      // 🚀 Step 4: Start upload to Drive
+      // 🚀 Step 4: Upload ZIP to Google Drive
       const uploadPromise = this.drive.files.create({
         requestBody: {
           name: zipName.endsWith(".zip") ? zipName : `${zipName}.zip`,
@@ -1019,7 +934,7 @@ export class GoogleDriveService {
         fields: "id, name, webViewLink",
       });
 
-      // 🧠 Step 5: Sync finalize + upload
+      // Finalize & sync
       await new Promise<void>((resolve, reject) => {
         archive.on("error", reject);
         passThrough.on("error", reject);
@@ -1030,9 +945,9 @@ export class GoogleDriveService {
       const uploadRes = await uploadPromise;
 
       console.log(
-        `✅ Files zipped & uploaded successfully: ${
-          uploadRes.data.webViewLink
-        } ${password ? "(🔐 password protected)" : ""}`
+        `✅ Uploaded ZIP: ${uploadRes.data.webViewLink} ${
+          password ? "(🔐 password protected)" : ""
+        }`
       );
 
       return {
@@ -1043,11 +958,11 @@ export class GoogleDriveService {
           webViewLink: uploadRes.data.webViewLink!,
         },
       };
-    } catch (error: any) {
-      console.error("❌ filesToZip failed:", error.message);
+    } catch (err: any) {
+      console.error("❌ convertFilesAndFoldersToZip failed:", err.message);
       return {
         success: false,
-        error: error.message || "Unknown error",
+        error: err.message || "Unknown error",
       };
     }
   }

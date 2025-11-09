@@ -15,6 +15,7 @@ Run: npm i -g ${pkg.name} to update.
 `);
 }
 
-import * as operations from "./operations.js";
-import { generateCredentialsAndTokens } from "./auth.js";
-export { generateCredentialsAndTokens, operations };
+import * as operations from "./operations";
+import { generateCredentialsAndTokens } from "./auth";
+import { initDriveService } from "./drivers/services";
+export { generateCredentialsAndTokens, operations, initDriveService };
