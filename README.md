@@ -164,14 +164,13 @@ main();
 
 ### 🧰 **Utility Operations**
 
-| Method              | Description                                                              |
-| ------------------- | ------------------------------------------------------------------------ |
-| `shareFile()`       | Share a file with a user                                                 |
-| `fileExists()`      | Check if a file exists                                                   |
-| `getStorageQuota()` | Get storage quota information                                            |
-| `folderToZip()`     | Create a zip archive of a folder                                         |
-| `filesToZip()`      | Create a zip archive of multiple files                                   |
-| `createStream()`    | Create stream for any Google Drive file (audio, video, image, doc, etc.) |
+| Method                  | Description                                                              |
+| ----------------------- | ------------------------------------------------------------------------ |
+| `filesandfoldertoZip()` | Create a zip archive of folder and multiple files                        |
+| `shareFile()`           | Share a file with a user                                                 |
+| `fileExists()`          | Check if a file exists                                                   |
+| `getStorageQuota()`     | Get storage quota information                                            |
+| `createStream()`        | Create stream for any Google Drive file (audio, video, image, doc, etc.) |
 
 ---
 

@@ -1,17 +1,14 @@
-import { operations, initDriveService } from "gdrivekit";
-async function main(){
-    initDriveService();
-    // Example: Create a zip file from multiple files
-    const res = await operations.filesAndFoldersToZip({
-        folderId: "1IAivwrXO6EKQdRJ1S30KOvjRnL0V7Trh",
-        zipName: "taset.zip",
+import * as operations from "./operations";
+import { initDriveService } from "./drivers/services";
+
+async function main() {
+  initDriveService();
+  const res = await operations.filesAndFoldersToZip({
+        fileIds: ["1fYxhIa4QzcHosZ373Dr5F-TqnmBgz1VwqPku6kpvEUs"],
+        zipName: "hello.zip",
         uploadToFolderId: undefined,
-        password: "1234",
+        password: "3333",
     });
     console.log(res);
-    //Example: Folder to zip
-    // const res2 = await driveService.folderToZip("FolderID", "Hate.zip", undefined, "1234");
-    // console.log(res2);
 }
-
 main();

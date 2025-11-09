@@ -814,34 +814,39 @@ export class GoogleDriveService {
 
   /**
    * Zip a Drive folder (supports nested folders, password, and same-level saving)
-   */
-  /**
-   * Zip a Google Drive folder (recursive, optional password, same-level saving)
-   */
- public async convertFilesAndFoldersToZip(
-    options: {
-      folderId?: string;
-      fileIds?: string[];
-      zipName: string;
-      uploadToFolderId?: string;
-      password?: string;
-    }
-  ): Promise<ApiResponse<{ id: string; name: string; webViewLink: string }>> {
+   **/
+
+  public async convertFilesAndFoldersToZip(options: {
+    folderId?: string;
+    fileIds?: string[];
+    zipName: string;
+    uploadToFolderId?: string;
+    password?: string;
+  }): Promise<{
+    success: boolean;
+    data?: { id: string; name: string; webViewLink: string };
+    error?: string;
+  }> {
+    console.log("🟢 Starting convertFilesAndFoldersToZip...");
+    const {
+      folderId,
+      fileIds = [],
+      zipName,
+      uploadToFolderId,
+      password,
+    } = options;
+
     try {
-      console.log("🟢 Starting convertFilesAndFoldersToZip...");
-
-      const { folderId, fileIds = [], zipName, uploadToFolderId, password } = options;
-
-      // 🛑 Allow only one: either folder OR files
       if (folderId && fileIds.length > 0) {
-        throw new Error("⚠️ You can select either a folder OR multiple files, not both.");
+        throw new Error(
+          "⚠️ You can select either a folder OR multiple files, not both."
+        );
       }
-
       if (!folderId && fileIds.length === 0) {
         throw new Error("⚠️ Please select a folder or files to zip.");
       }
 
-      // 🔍 Step 1: Find parent folder for upload
+      // 🔍 Step 1: Determine parent folder
       let parentFolderId = uploadToFolderId;
       if (!parentFolderId) {
         const referenceId = folderId || fileIds[0];
@@ -856,20 +861,30 @@ export class GoogleDriveService {
         parentFolderId = parents[0];
       }
 
-      // 🧩 Step 2: Create zip archive stream
-      const passThrough = new PassThrough();
-      const archive = archiver(
-        (password ? "zip-encrypted" : "zip") as any,
-        {
-          zlib: { level: 9 },
-          encryptionMethod: password ? "aes256" : undefined,
-          password,
-        }
-      );
+      // 🧩 Step 2: Create streaming ZIP + PassThrough
+      const archive = archiver((password ? "zip-encrypted" : "zip") as any, {
+        zlib: { level: 9 },
+        encryptionMethod: password ? "aes256" : undefined,
+        password,
+      });
 
+      const passThrough = new PassThrough();
       archive.pipe(passThrough);
 
-      // Helper: add folder contents recursively
+      // 🚀 Step 3: Start uploading immediately while archiving
+      const uploadPromise = this.drive.files.create({
+        requestBody: {
+          name: zipName.endsWith(".zip") ? zipName : `${zipName}.zip`,
+          parents: [parentFolderId],
+        },
+        media: {
+          mimeType: "application/zip",
+          body: passThrough, // direct live stream
+        },
+        fields: "id, name, webViewLink",
+      });
+
+      // 🗂 Step 4: Add files/folders to archive
       const addFolderToArchive = async (id: string, currentPath = "") => {
         const res = await this.drive.files.list({
           q: `'${id}' in parents and trashed=false`,
@@ -881,7 +896,7 @@ export class GoogleDriveService {
           if (file.mimeType === "application/vnd.google-apps.folder") {
             await addFolderToArchive(file.id!, `${currentPath}${file.name}/`);
           } else {
-            const stream = await this.createStream(file.id!);
+            const stream = await this.createStreamfilesandFolder(file.id!);
             if (!stream) continue;
 
             const nodeStream =
@@ -895,7 +910,6 @@ export class GoogleDriveService {
         }
       };
 
-      // 🗂 Step 3: Add folder or files
       if (folderId) {
         console.log("📁 Zipping folder...");
         await addFolderToArchive(folderId);
@@ -906,9 +920,8 @@ export class GoogleDriveService {
             fileId,
             fields: "id, name",
           });
-
           const name = meta.data.name || `file_${fileId}`;
-          const stream = await this.createStream(fileId);
+          const stream = await this.createStreamfilesandFolder(fileId);
           if (!stream) continue;
 
           const nodeStream =
@@ -921,27 +934,8 @@ export class GoogleDriveService {
         }
       }
 
-      // 🚀 Step 4: Upload ZIP to Google Drive
-      const uploadPromise = this.drive.files.create({
-        requestBody: {
-          name: zipName.endsWith(".zip") ? zipName : `${zipName}.zip`,
-          parents: [parentFolderId],
-        },
-        media: {
-          mimeType: "application/zip",
-          body: passThrough,
-        },
-        fields: "id, name, webViewLink",
-      });
-
-      // Finalize & sync
-      await new Promise<void>((resolve, reject) => {
-        archive.on("error", reject);
-        passThrough.on("error", reject);
-        passThrough.on("finish", resolve);
-        archive.finalize().catch(reject);
-      });
-
+      // ✅ Step 5: Finalize archive & wait for upload
+      await archive.finalize();
       const uploadRes = await uploadPromise;
 
       console.log(
@@ -966,4 +960,51 @@ export class GoogleDriveService {
       };
     }
   }
+
+private async createStreamfilesandFolder(fileId: string): Promise<NodeJS.ReadableStream | null> {
+  try {
+    // 🔍 Get file metadata first
+    const meta = await this.drive.files.get({
+      fileId,
+      fields: "id, name, mimeType",
+    });
+
+    const mimeType = meta.data.mimeType;
+
+    // 🧩 Exportable Google file types with alternate editable formats
+    const exportMap: Record<string, string> = {
+      "application/vnd.google-apps.document":
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document", // DOCX
+      "application/vnd.google-apps.spreadsheet":
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", // XLSX
+      "application/vnd.google-apps.presentation":
+        "application/vnd.openxmlformats-officedocument.presentationml.presentation", // PPTX
+      "application/vnd.google-apps.drawing": "image/png", // PNG
+    };
+
+    if (exportMap[mimeType!]) {
+      console.log(`📤 Exporting ${meta.data.name} (${mimeType})`);
+      const res = await this.drive.files.export(
+        { fileId, mimeType: exportMap[mimeType!] },
+        { responseType: "stream" }
+      );
+      return res.data;
+    }
+
+    // 🧱 Normal binary file download
+    const res = await this.drive.files.get(
+      { fileId, alt: "media" },
+      { responseType: "stream" }
+    );
+
+    return res.data;
+  } catch (err: any) {
+    console.warn(
+      `⚠️ Failed to stream file ${fileId}:`,
+      JSON.stringify(err.response?.data || err.message, null, 2)
+    );
+    return null;
+  }
+}
+
 }

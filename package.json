@@ -1,6 +1,6 @@
 {
   "name": "gdrivekit",
-  "version": "1.1.8",
+  "version": "1.1.9",
   "description": "A lightweight Google Drive toolkit for effortless file management — handle uploads, downloads, and Drive operations in just a few lines of code.",
   "type": "module",
   "main": "dist/index.js",
