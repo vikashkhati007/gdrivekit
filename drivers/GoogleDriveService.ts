@@ -63,9 +63,7 @@ export class GoogleDriveService {
     });
   }
 
-  /**
-   * Get File
-   */
+  /** ----------------  Get File ---------------- **/
   public async getFile(fileId: string): Promise<ApiResponse<FileMetadata>> {
     try {
       const response = await this.drive.files.get({
@@ -85,9 +83,7 @@ export class GoogleDriveService {
       };
     }
   }
-  /**
-   * Read file data directly (returns Buffer or text)
-   */
+  /** ----------------  Read File Data ---------------- **/
   public async readFileData(
     fileId: string,
     asText: boolean = true
@@ -112,9 +108,7 @@ export class GoogleDriveService {
     }
   }
 
-  /**
-   * List files in Google Drive
-   */
+  /** ----------------  List Files ---------------- **/
   public async listFiles(
     params: ListFilesParams = {}
   ): Promise<ApiResponse<ListFilesResponse>> {
@@ -142,10 +136,8 @@ export class GoogleDriveService {
       };
     }
   }
+  /** ----------------  Get File Metadata ---------------- **/
 
-  /**
-   * Get file metadata
-   */
   public async getFileMetadata(
     fileId: string
   ): Promise<ApiResponse<FileMetadata>> {
@@ -167,10 +159,7 @@ export class GoogleDriveService {
       };
     }
   }
-
-  /**
-   * Download file to local storage
-   */
+  /** ----------------  Download File ---------------- **/
   public async downloadFile(
     fileId: string,
     destPath: string
@@ -200,10 +189,7 @@ export class GoogleDriveService {
       };
     }
   }
-
-  /**
-   * Upload file to Google Drive (multipart upload)
-   */
+  /** ----------------  Upload File ---------------- **/
   public async uploadFile(
     filePath: string,
     metadata: UploadFileMetadata = {}
@@ -236,10 +222,7 @@ export class GoogleDriveService {
       };
     }
   }
-
-  /**
-   * Update file content
-   */
+  /** ----------------  Update File Content ---------------- **/
   public async updateFileContent(
     fileId: string,
     content: string,
@@ -262,10 +245,7 @@ export class GoogleDriveService {
       throw error;
     }
   }
-
-  /**
-   * Update file metadata
-   */
+  /** ----------------  Update File Metadata ---------------- **/
   public async updateFileMetadata(
     fileId: string,
     metadata: Partial<FileMetadata>
@@ -288,10 +268,7 @@ export class GoogleDriveService {
       };
     }
   }
-
-  /**
-   * Delete file from Google Drive
-   */
+  /** ----------------  Delete File ---------------- **/
   public async deleteFile(
     fileId: string
   ): Promise<ApiResponse<{ message: string }>> {
@@ -311,10 +288,7 @@ export class GoogleDriveService {
       };
     }
   }
-
-  /**
-   * Create folder in Google Drive
-   */
+  /** ----------------  Create Folder ---------------- **/
   public async createFolder(
     folderName: string,
     parentFolderId?: string
@@ -345,10 +319,7 @@ export class GoogleDriveService {
       };
     }
   }
-
-  /**
-   * Update JSON file content directly (without needing local file)
-   */
+  /** ----------------  Update JSON File Content ---------------- **/
   public async updateJsonContent(
     fileId: string,
     jsonData: Record<string, any>
@@ -377,11 +348,7 @@ export class GoogleDriveService {
       };
     }
   }
-
-  /**
-   * Add a new key-value pair to a JSON file in Google Drive.
-   * If the key already exists, it will be overwritten.
-   */
+  /** ----------------  Add JSON Content ---------------- **/
   public async addJsonContent(
     fileId: string,
     key: string,
@@ -426,10 +393,7 @@ export class GoogleDriveService {
       };
     }
   }
-
-  /**
-   * Search files by query
-   */
+  /** ----------------  Search Files ---------------- **/
   public async searchFiles(
     searchQuery: string,
     pageSize: number = 10
@@ -439,10 +403,7 @@ export class GoogleDriveService {
       pageSize: pageSize,
     });
   }
-
-  /**
-   * Get image metadata for a file
-   */
+  /** ----------------  Get Image Metadata ---------------- **/
   public async getImageMetadata(
     fileId: string
   ): Promise<ApiResponse<ImageMediaMetadata>> {
@@ -463,10 +424,7 @@ export class GoogleDriveService {
       };
     }
   }
-
-  /**
-   * Get video metadata for a file
-   */
+  /** ----------------  Get Video Metadata ---------------- **/
   public async getVideoMetadata(
     fileId: string
   ): Promise<ApiResponse<VideoMediaMetadata>> {
@@ -487,9 +445,7 @@ export class GoogleDriveService {
       };
     }
   }
-  /**
-   * Create a JSON file on Google Drive
-   */
+  /** ----------------  Create JSON File ---------------- **/
   public async createJsonFile(jsonContent: string, name: string) {
     const response = await this.drive.files.create({
       requestBody: {
@@ -508,10 +464,7 @@ export class GoogleDriveService {
       data: response.data as FileMetadata,
     };
   }
-
-  /**
-   * Get complete file metadata including image/video metadata
-   */
+  /** ----------------  Get File Metadata ---------------- **/
   public async getCompleteFileMetadata(
     fileId: string
   ): Promise<ApiResponse<FileMetadata>> {
@@ -532,9 +485,7 @@ export class GoogleDriveService {
       };
     }
   }
-  /**
-   * Get storageQuota
-   */
+  /** ----------------  Get Storage Quota ---------------- **/
   public async getStorageQuota(): Promise<ApiResponse<StorageQuota>> {
     try {
       const response = await this.drive.about.get({
@@ -552,9 +503,7 @@ export class GoogleDriveService {
       };
     }
   }
-  /**
-   * Share File
-   */
+  /** ----------------  Share File ---------------- **/
   public async shareFile(
     fileId: string,
     emailAddress: string,
@@ -580,10 +529,7 @@ export class GoogleDriveService {
       };
     }
   }
-  /**
-   * Convert Regular File to Google Docs
-   */
-
+  /** ----------------  Convert File ---------------- **/
   public async ConversionFunction(
     fileId: string,
     targetMimeType: string
@@ -678,9 +624,7 @@ export class GoogleDriveService {
       };
     }
   }
-  /**
-   * Create stream for any Google Drive file (audio, video, image, doc, etc.)
-   */
+  /** ----------------  Get File Stream ---------------- **/
   public async createStream(
     fileId: string,
     targetMimeType?: string
@@ -722,9 +666,7 @@ export class GoogleDriveService {
       return null;
     }
   }
-  /**
-   * Select json key value from google drive file
-   */
+  /** ----------------  Get JSON Content ---------------- **/
   public async selectJsonContent(fileId: string): Promise<any> {
     try {
       const fileStream = await this.createStream(fileId, MIME_TYPES.JSON);
@@ -747,7 +689,7 @@ export class GoogleDriveService {
     }
   }
 
-  // Push new object to a JSON array field
+  /** ----------------  Push JSON Object to Array ---------------- **/
   public async pushJsonObjectToArray(
     fileId: string,
     arrayPath: string,
@@ -812,10 +754,7 @@ export class GoogleDriveService {
     }
   }
 
-  /**
-   * Zip a Drive folder (supports nested folders, password, and same-level saving)
-   **/
-
+  /** ----------------  Convert Files and Folders to ZIP ---------------- **/
   public async convertFilesAndFoldersToZip(options: {
     folderId?: string;
     fileIds?: string[];
@@ -960,7 +899,7 @@ export class GoogleDriveService {
       };
     }
   }
-
+  /** ----------------  Create Stream for Files and Folders ---------------- **/
   public async createStreamfilesandFolder(
     fileId: string
   ): Promise<NodeJS.ReadableStream | null> {
@@ -1008,9 +947,7 @@ export class GoogleDriveService {
       return null;
     }
   }
-  /**
-   * Finds and logs duplicate file and folder names in Drive (console-only version).
-   */
+  /** ----------------  Find Duplicate Names ---------------- **/
   public async findDuplicate(): Promise<void> {
     try {
       console.log("\n🔍 Scanning Google Drive for duplicate names...");
