@@ -168,7 +168,7 @@ main();
 | -------------------------------- | --------------------------------------------------------------------------- |
 | `encryptText()`                  | Encrypt plain text using AES-256-GCM with password-based key derivation     |
 | `decryptText()`                  | Decrypt encrypted text using AES-256-GCM with password-based key derivation |
-| `filesandfoldertoZip()`          | Create a zip archive of folder and multiple files                           |
+| `filesAndFoldersToZip()`         | Create a zip archive of folder and multiple files                           |
 | `findDuplicateFilesAndFolders()` | Find duplicate file and folder names in Drive                               |
 | `shareFile()`                    | Share a file with a user                                                    |
 | `fileExists()`                   | Check if a file exists                                                      |
