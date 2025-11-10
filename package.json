@@ -41,6 +41,7 @@
   "dependencies": {
     "archiver": "^7.0.1",
     "archiver-zip-encrypted": "^2.0.0",
+    "crypto": "^1.0.1",
     "googleapis": "^164.1.0",
     "update-notifier": "^7.3.1"
   },

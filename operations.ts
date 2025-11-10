@@ -840,6 +840,34 @@ export async function downloadMultipleFiles(
 // UTILITY OPERATIONS
 // ============================================
 
+/** ----------------  Encrypt Text ---------------- **/
+
+/**
+ * Encrypts plain text using AES-256-GCM with password-based key derivation.
+ * @param plainText - Text to encrypt
+ * @param password - Password for key derivation
+ * @param salt - Salt for key derivation
+ * @returns Encrypted text
+ */
+export async function encryptText(plainText: string, password: string, salt: string) {
+  return await driveService.encryptText(plainText, password, salt);
+}
+
+/** ----------------  Decrypt Text ---------------- **/
+
+/**
+ * Decrypts encrypted text using AES-256-GCM with password-based key derivation.
+ * @param encryptedText - Text to decrypt
+ * @param password - Password for key derivation
+ * @param salt - Salt for key derivation
+ * @returns Decrypted text
+ */
+export async function decryptText(encryptedText: string, password: string, salt: string) {
+  return await driveService.decryptText(encryptedText, password, salt);
+}
+
+
+
 /** ----------------  Convert Files and Folders to Zip ---------------- **/
 
 /**
@@ -1109,6 +1137,9 @@ export async function convertDrawingToPdf(
   throw new Error(response.error || "Failed to convert Drawing → PDF");
 }
 
+/** ----------------  ---------------- **/
+
+
 // ============================================
 // Export all operations
 // ============================================
@@ -1121,6 +1152,7 @@ export const driveOperations = {
   deleteFile,
   renameFile,
   updateFile,
+  getFileIdByName,
   getFileInfo,
   getCompleteFileInfo,
   moveFile,
@@ -1143,6 +1175,7 @@ export const driveOperations = {
   // Folder operations
   createFolder,
   deleteFolder,
+  getFolderIdByName,
   listFoldersByName,
   listAllFolders,
   listFoldersInFolder,
@@ -1182,8 +1215,6 @@ export const driveOperations = {
   fileExists,
   getStorageQuota,
   createStream,
-  getFolderIdByName,
-  getFileIdByName,
 
   //Conversion Operation
   convertTextToDocs,

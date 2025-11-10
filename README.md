@@ -164,13 +164,16 @@ main();
 
 ### 🧰 **Utility Operations**
 
-| Method                  | Description                                                              |
-| ----------------------- | ------------------------------------------------------------------------ |
-| `filesandfoldertoZip()` | Create a zip archive of folder and multiple files                        |
-| `shareFile()`           | Share a file with a user                                                 |
-| `fileExists()`          | Check if a file exists                                                   |
-| `getStorageQuota()`     | Get storage quota information                                            |
-| `createStream()`        | Create stream for any Google Drive file (audio, video, image, doc, etc.) |
+| Method                           | Description                                                                 |
+| -------------------------------- | --------------------------------------------------------------------------- |
+| `encryptText()`                  | Encrypt plain text using AES-256-GCM with password-based key derivation     |
+| `decryptText()`                  | Decrypt encrypted text using AES-256-GCM with password-based key derivation |
+| `filesandfoldertoZip()`          | Create a zip archive of folder and multiple files                           |
+| `findDuplicateFilesAndFolders()` | Find duplicate file and folder names in Drive                               |
+| `shareFile()`                    | Share a file with a user                                                    |
+| `fileExists()`                   | Check if a file exists                                                      |
+| `getStorageQuota()`              | Get storage quota information                                               |
+| `createStream()`                 | Create stream for any Google Drive file (audio, video, image, doc, etc.)    |
 
 ---
 
