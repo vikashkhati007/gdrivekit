@@ -7,6 +7,8 @@ import { FileMetadata, MimeType } from "./types/index";
 // HELPER FUNCTIONS
 // ============================================
 
+/** ----------------  SearchByNameHelper ---------------- **/
+
 /**
  * Generic helper to search for items by name with optional type filtering
  * @param name - Name to search for
@@ -31,6 +33,9 @@ async function searchByNameHelper(
 
   return await driveService.listFiles({ query });
 }
+
+/** ----------------  GetIdByNameHelper ---------------- **/
+
 
 /**
  * Generic helper to get ID by name with optional type filtering
@@ -64,7 +69,8 @@ async function getIdByNameHelper(
 // FILE OPERATIONS
 // ============================================
 
-//readFileData
+/** ----------------  ReadFileData ---------------- **/
+
 /**
  * Read file content from Google Drive
  * @param fileId - Google Drive file ID
@@ -78,6 +84,8 @@ export async function readFileData(fileId: string): Promise<string> {
   }
   throw new Error(response.error || "Failed to read file data");
 }
+
+/** ----------------  Upload a file ---------------- **/
 
 /**
  * Upload a file to Google Drive
@@ -100,6 +108,7 @@ export async function uploadFile(
     mimeType: options?.mimeType,
   });
 }
+/** ----------------  Download a file ---------------- **/
 
 /**
  * Download a file from Google Drive
@@ -109,6 +118,7 @@ export async function uploadFile(
 export async function downloadFile(fileId: string, savePath: string) {
   return await driveService.downloadFile(fileId, savePath);
 }
+/** ----------------  Delete a file ---------------- **/
 
 /**
  * Delete a file from Google Drive
@@ -117,6 +127,7 @@ export async function downloadFile(fileId: string, savePath: string) {
 export async function deleteFile(fileId: string) {
   return await driveService.deleteFile(fileId);
 }
+/** ----------------  Rename a file ---------------- **/
 
 /**
  * Rename a file
@@ -126,6 +137,7 @@ export async function deleteFile(fileId: string) {
 export async function renameFile(fileId: string, newName: string) {
   return await driveService.updateFileMetadata(fileId, { name: newName });
 }
+/** ----------------  Update file content ---------------- **/
 
 /**
  * Update file content (replace existing file content)
@@ -140,6 +152,8 @@ export async function updateFile(
   return await driveService.updateFileContent(fileId, newContent, mimeType);
 }
 
+/** ----------------  Get file metadata ---------------- **/
+
 /**
  * Get file information
  * @param fileId - Google Drive file ID
@@ -147,6 +161,9 @@ export async function updateFile(
 export async function getFileInfo(fileId: string) {
   return await driveService.getFileMetadata(fileId);
 }
+
+/** ----------------  Get image metadata for an image file ---------------- **/
+
 
 /**
  * Get image metadata for an image file
@@ -156,6 +173,8 @@ export async function getImageMetadata(fileId: string) {
   return await driveService.getImageMetadata(fileId);
 }
 
+/** ----------------  Get video metadata for a video file ---------------- **/
+
 /**
  * Get video metadata for a video file
  * @param fileId - Google Drive file ID of the video
@@ -163,6 +182,7 @@ export async function getImageMetadata(fileId: string) {
 export async function getVideoMetadata(fileId: string) {
   return await driveService.getVideoMetadata(fileId);
 }
+/** ----------------  Move a file to a different folder ---------------- **/
 
 /**
  * Get complete file metadata including all available fields
@@ -171,6 +191,9 @@ export async function getVideoMetadata(fileId: string) {
 export async function getCompleteFileInfo(fileId: string) {
   return await driveService.getCompleteFileMetadata(fileId);
 }
+
+/** ----------------  Move a file to a different folder ---------------- **/
+
 
 /**
  * Move file to a different folder
@@ -188,6 +211,15 @@ export async function moveFile(fileId: string, newFolderId: string) {
     parents: [newFolderId],
   });
 }
+
+
+/** ----------------  Move a file by name to a different folder ---------------- **/
+
+/**
+ * Move file to a different folder by name
+ * @param fileName - Name of the file to move
+ * @param folderName - Name of the destination folder
+ */
 
 export async function moveFileByName(fileName: string, folderName: string) {
   // Resolve file and folder IDs by name in parallel for better performance
@@ -208,6 +240,8 @@ export async function moveFileByName(fileName: string, folderName: string) {
   return await moveFile(fileResult.fileId, folderResult.folderId);
 }
 
+/** ----------------  Copy a file ---------------- **/
+
 /**
  * Copy a file
  * @param fileId - Google Drive file ID
@@ -225,14 +259,20 @@ export async function copyFile(fileId: string, newName?: string) {
 // JSON OPERATIONS
 // ============================================
 
-// readFileData for json files
+/** ----------------  Create a new JSON file on Google Drive ---------------- **/
+
 
 /**
- * Create a new JSON file on Google Drive
+ * Create a new JSON file on Google Drive.
+ * @param jsonContent - JSON object to store in the file.
+ * @param name - Name for the new JSON file.
  */
 export async function createJsonFile(jsonContent: any, name: string) {
   return await driveService.createJsonFile(JSON.stringify(jsonContent), name);
 }
+
+
+/** ----------------  Select JSON content from a Google Drive file ---------------- **/
 
 /**
  * Select full JSON data from Google Drive file.
@@ -247,6 +287,9 @@ export async function selectJsonContent(fileId: string): Promise<any> {
   };
 }
 
+
+/** ----------------  Read JSON file content from Google Drive ---------------- **/
+
 /**
  * Read JSON file content from Google Drive
  * @param fileId - Google Drive file ID
@@ -259,6 +302,8 @@ export async function readJsonFileData(fileId: string): Promise<any> {
     return { success: false, error: "Failed to parse JSON file content" };
   }
 }
+
+/** ----------------  Add a new key-value pair to a JSON file on Google Drive ---------------- **/
 
 /**
  * Add a new key-value pair to a JSON file on Google Drive.
@@ -310,8 +355,13 @@ export async function addJsonKeyValue(fileId: string, key: string, value: any) {
   }
 }
 
-// pushJsonObjectToArray
 
+/** ----------------  Add a JSON object to a specified array path in a JSON file stored on Google Drive ---------------- **/
+
+/**
+ * Add a JSON object to a specified array path in a JSON file stored on Google Drive.
+ * Supports nested array paths (e.g., "user.items.0").
+ */
 export async function pushJsonObjectToArray(
   fileId: string,
   arrayPath: string,
@@ -319,6 +369,8 @@ export async function pushJsonObjectToArray(
 ) {
   return await driveService.pushJsonObjectToArray(fileId, arrayPath, newObject);
 }
+
+/** ----------------  Delete a key (supports nested paths like "user.profile.name") from a JSON file stored in Google Drive ---------------- **/
 
 /**
  * Delete a key (supports nested paths like "user.profile.name")
@@ -380,6 +432,8 @@ export async function deleteJsonFieldAndKeys(fileId: string, key: string) {
     return { success: false, error: error.message };
   }
 }
+
+/** ----------------  Update or rename a key in a JSON file stored on Google Drive ---------------- **/
 
 /**
  * Update or rename a key in a JSON file stored on Google Drive.
@@ -463,6 +517,8 @@ export async function updateJsonFieldAndValues(
 // FOLDER OPERATIONS
 // ============================================
 
+/** ----------------  Create a new folder ---------------- **/
+
 /**
  * Create a new folder
  * @param folderName - Name of the folder
@@ -475,6 +531,9 @@ export async function createFolder(
   return await driveService.createFolder(folderName, parentFolderId);
 }
 
+/** ----------------  Delete a folder ---------------- **/
+
+
 /**
  * Delete a folder
  * @param folderId - Google Drive folder ID
@@ -482,6 +541,8 @@ export async function createFolder(
 export async function deleteFolder(folderId: string) {
   return await driveService.deleteFile(folderId);
 }
+
+/** ----------------  List folder by name ---------------- **/
 
 /**
  * List folder by name
@@ -491,14 +552,15 @@ export async function listFoldersByName(folderName: string) {
   return await searchByNameHelper(folderName, "folder", "exact");
 }
 
-/**
- * List all folders
- */
+/** ----------------  List all folders ---------------- **/
+
 export async function listAllFolders() {
   return await driveService.listFiles({
     query: `mimeType='${MIME_TYPES.FOLDER}' and trashed=false`,
   });
 }
+
+/** ----------------  List folders in a specific folder ---------------- **/
 
 /**
  * List specific folder in a specific folder
@@ -509,6 +571,8 @@ export async function listFoldersInFolder(folderId: string) {
     query: `'${folderId}' in parents and mimeType='${MIME_TYPES.FOLDER}' and trashed=false`,
   });
 }
+
+/** ----------------  List files in a specific folder ---------------- **/
 
 /**
  * List files in a specific folder
@@ -524,6 +588,8 @@ export async function listFilesInFolder(folderId: string) {
 // SEARCH OPERATIONS
 // ============================================
 
+/** ----------------  Search files by name ---------------- **/
+
 /**
  * Search files by name
  * @param fileName - Name or partial name to search
@@ -532,6 +598,8 @@ export async function searchByName(fileName: string) {
   return await searchByNameHelper(fileName, "file", "contains");
 }
 
+/** ----------------  Search files by exact name ---------------- **/
+
 /**
  * Search files by exact name
  * @param fileName - Exact file name
@@ -539,6 +607,8 @@ export async function searchByName(fileName: string) {
 export async function searchByExactName(fileName: string) {
   return await searchByNameHelper(fileName, "file", "exact");
 }
+
+/** ----------------  Search by file type ---------------- **/
 
 /**
  * Search by file type
@@ -562,6 +632,8 @@ export async function searchByType(type: string) {
   return await driveService.listFiles({ query });
 }
 
+/** ----------------  Search files modified after a date ---------------- **/
+
 /**
  * Search files modified after a date
  * @param date - Date string (e.g., '2024-01-01' or '2024-01-01T10:00:00')
@@ -574,23 +646,23 @@ export async function searchModifiedAfter(date: string) {
   });
 }
 
-/**
- * Search starred files
- */
+/** ----------------  Search starred files ---------------- **/
+
 export async function searchStarredFiles() {
   return await driveService.listFiles({
     query: "starred=true and trashed=false",
   });
 }
 
-/**
- * Search shared files
- */
+/** ----------------  Search shared files ---------------- **/
+
 export async function searchSharedFiles() {
   return await driveService.listFiles({
     query: "sharedWithMe=true and trashed=false",
   });
 }
+
+/** ----------------  Search files containing text ---------------- **/
 
 /**
  * Search files containing text
@@ -606,6 +678,8 @@ export async function searchByContent(searchText: string) {
 // LIST OPERATIONS
 // ============================================
 
+/** ----------------  List all files ---------------- **/
+
 /**
  * List all files (paginated, default 10 files)
  * @param limit - Number of files to return (default: 10)
@@ -616,6 +690,8 @@ export async function listFiles(limit: number = 10) {
     query: "trashed=false",
   });
 }
+
+/** ----------------  List all recent files ---------------- **/
 
 /**
  * List recent files (modified in last N days)
@@ -633,81 +709,72 @@ export async function listRecentFiles(days: number = 7) {
   });
 }
 
-/**
- * List all PDFs
- */
+/** ----------------  List all PDFs ---------------- **/
+
 export async function listPDFs() {
   return await driveService.listFiles({
     query: `mimeType='${MIME_TYPES.PDF}' and trashed=false`,
   });
 }
 
-/**
- * List all images
- */
+/** ----------------  List all images ---------------- **/
+
 export async function listImages() {
   return await driveService.listFiles({
     query: `mimeType='${MIME_TYPES.JPEG}' or mimeType='${MIME_TYPES.PNG}' or mimeType='${MIME_TYPES.GIF}' or mimeType='${MIME_TYPES.SVG}' and trashed=false`,
   });
 }
 
-/**
- * List all video files
- */
+/** ----------------  List all video files ---------------- **/
+
 export async function listVideos() {
   return await driveService.listFiles({
     query: `mimeType='${MIME_TYPES.MP4}' or mimeType='${MIME_TYPES.MKV}' or mimeType='${MIME_TYPES.WEBM}' or mimeType='${MIME_TYPES.AVI}' and trashed=false`,
   });
 }
 
-/**
- * List all audio files
- */
+/** ----------------  List all audio files ---------------- **/
+
 export async function listAudios() {
   return await driveService.listFiles({
     query: `mimeType='${MIME_TYPES.MP3}' or mimeType='${MIME_TYPES.WAV}' and trashed=false`,
   });
 }
 
-/**
- * List all archive files
- */
+/** ----------------  List all archive files ---------------- **/
+
 export async function listArchives() {
   return await driveService.listFiles({
     query: `mimeType='${MIME_TYPES.ZIP}' or mimeType='${MIME_TYPES.RAR}' and trashed=false`,
   });
 }
 
-/**
- * List all json files
- */
+/** ----------------  List all json files ---------------- **/
+
 export async function listJSONs() {
   return await driveService.listFiles({
     query: `mimeType='${MIME_TYPES.JSON}' and trashed=false`,
   });
 }
 
-/**
- * List all sheet files
- */
+/** ----------------  List all sheet files ---------------- **/
+
 export async function listSheets() {
   return await driveService.listFiles({
     query: `mimeType='${MIME_TYPES.SPREADSHEET}' and trashed=false`,
   });
 }
 
-/**
- * List all presentation files
- */
+/** ----------------  List all presentation files ---------------- **/
+
 export async function listPresentations() {
   return await driveService.listFiles({
     query: `mimeType='${MIME_TYPES.PRESENTATION}' and trashed=false`,
   });
 }
 
-/**
- * List all docs files
- */
+/** ----------------  List all docs files ---------------- **/
+
 export async function listDocs() {
   return await driveService.listFiles({
     query: `mimeType='${MIME_TYPES.DOCUMENT}' and trashed=false`,
@@ -717,6 +784,8 @@ export async function listDocs() {
 // ============================================
 // BATCH OPERATIONS
 // ============================================
+
+/** ----------------  Upload Multiple Files ---------------- **/
 
 /**
  * Upload multiple files at once
@@ -735,6 +804,8 @@ export async function uploadMultipleFiles(
   return results;
 }
 
+/** ----------------  Delete Multiple Files ---------------- **/
+
 /**
  * Delete multiple files at once
  * @param fileIds - Array of file IDs to delete
@@ -747,6 +818,8 @@ export async function deleteMultipleFiles(fileIds: string[]) {
   }
   return results;
 }
+
+/** ----------------  Download Multiple Files ---------------- **/
 
 /**
  * Download multiple files at once
@@ -767,6 +840,12 @@ export async function downloadMultipleFiles(
 // UTILITY OPERATIONS
 // ============================================
 
+/** ----------------  Convert Files and Folders to Zip ---------------- **/
+
+/**
+ * Convert multiple files and folders to a single zip archive
+ * @param options - Conversion options
+ */
 export async function filesAndFoldersToZip(options: {
   folderId?: string;
   fileIds?: string[];
@@ -776,6 +855,14 @@ export async function filesAndFoldersToZip(options: {
 }) {
   return await driveService.convertFilesAndFoldersToZip(options);
 }
+/** ----------------  Find Duplicate Files & Folder ---------------- **/
+
+export async function findDuplicateFilesAndFolders(): Promise<void> {
+  return await driveService.findDuplicate();
+}
+
+/** ----------------  Check if File Exists ---------------- **/
+
 
 /**
  * Check if file exists by name
@@ -786,13 +873,13 @@ export async function fileExists(fileName: string): Promise<boolean> {
   return result.success && (result.data?.files.length || 0) > 0;
 }
 
-/**
- * Get Storage Quota
- */
+/** ----------------  Get Storage Quota ---------------- **/
 
 export async function getStorageQuota() {
   return await driveService.getStorageQuota();
 }
+
+/** ----------------  Share File ---------------- **/
 
 /**
  * Share File
@@ -808,6 +895,8 @@ export async function shareFile(
   return await driveService.shareFile(fileId, emailAddress, role);
 }
 
+/** ----------------  Create Stream ---------------- **/
+
 //Create Stream
 /**
  * Create stream for any Google Drive file (audio, video, image, doc, etc.)
@@ -816,6 +905,7 @@ export async function createStream(fileId: string, targetMimeType: string) {
   return await driveService.createStream(fileId, targetMimeType);
 }
 
+/** ----------------  Get Folder ID by Name ---------------- **/
 /**
  * Get folder ID by name
  * @param folderName - Folder name to find
@@ -833,6 +923,8 @@ export async function getFolderIdByName(folderName: string) {
 
   return { success: false, error: result.error };
 }
+
+/** ----------------  Get File ID by Name ---------------- **/
 
 /**
  * Get file ID by name
@@ -941,6 +1033,10 @@ export async function convertSheetToPdf(fileId: string): Promise<FileMetadata> {
 
 /** ---------------- Google Slides Conversions ---------------- **/
 
+/**
+ * Convert a PPT file to Google Slides
+ * @param fileId - File ID to convert
+ */
 export async function convertPptToSlides(
   fileId: string
 ): Promise<FileMetadata> {
@@ -952,6 +1048,10 @@ export async function convertPptToSlides(
   throw new Error(response.error || "Failed to convert PPT → Google Slides");
 }
 
+/**
+ * Convert a Google Slides file to PPTX
+ * @param fileId - File ID to convert
+ */
 export async function convertSlidesToPpt(
   fileId: string
 ): Promise<FileMetadata> {
@@ -1077,6 +1177,7 @@ export const driveOperations = {
 
   // Utility operations
   filesAndFoldersToZip,
+  findDuplicateFilesAndFolders,
   shareFile,
   fileExists,
   getStorageQuota,
