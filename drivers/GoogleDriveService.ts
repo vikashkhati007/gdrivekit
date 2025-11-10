@@ -961,50 +961,120 @@ export class GoogleDriveService {
     }
   }
 
-private async createStreamfilesandFolder(fileId: string): Promise<NodeJS.ReadableStream | null> {
-  try {
-    // 🔍 Get file metadata first
-    const meta = await this.drive.files.get({
-      fileId,
-      fields: "id, name, mimeType",
-    });
+  public async createStreamfilesandFolder(
+    fileId: string
+  ): Promise<NodeJS.ReadableStream | null> {
+    try {
+      // 🔍 Get file metadata first
+      const meta = await this.drive.files.get({
+        fileId,
+        fields: "id, name, mimeType",
+      });
 
-    const mimeType = meta.data.mimeType;
+      const mimeType = meta.data.mimeType;
 
-    // 🧩 Exportable Google file types with alternate editable formats
-    const exportMap: Record<string, string> = {
-      "application/vnd.google-apps.document":
-        "application/vnd.openxmlformats-officedocument.wordprocessingml.document", // DOCX
-      "application/vnd.google-apps.spreadsheet":
-        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", // XLSX
-      "application/vnd.google-apps.presentation":
-        "application/vnd.openxmlformats-officedocument.presentationml.presentation", // PPTX
-      "application/vnd.google-apps.drawing": "image/png", // PNG
-    };
+      // 🧩 Exportable Google file types with alternate editable formats
+      const exportMap: Record<string, string> = {
+        "application/vnd.google-apps.document":
+          "application/vnd.openxmlformats-officedocument.wordprocessingml.document", // DOCX
+        "application/vnd.google-apps.spreadsheet":
+          "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", // XLSX
+        "application/vnd.google-apps.presentation":
+          "application/vnd.openxmlformats-officedocument.presentationml.presentation", // PPTX
+        "application/vnd.google-apps.drawing": "image/png", // PNG
+      };
 
-    if (exportMap[mimeType!]) {
-      console.log(`📤 Exporting ${meta.data.name} (${mimeType})`);
-      const res = await this.drive.files.export(
-        { fileId, mimeType: exportMap[mimeType!] },
+      if (exportMap[mimeType!]) {
+        console.log(`📤 Exporting ${meta.data.name} (${mimeType})`);
+        const res = await this.drive.files.export(
+          { fileId, mimeType: exportMap[mimeType!] },
+          { responseType: "stream" }
+        );
+        return res.data;
+      }
+
+      // 🧱 Normal binary file download
+      const res = await this.drive.files.get(
+        { fileId, alt: "media" },
         { responseType: "stream" }
       );
+
       return res.data;
+    } catch (err: any) {
+      console.warn(
+        `⚠️ Failed to stream file ${fileId}:`,
+        JSON.stringify(err.response?.data || err.message, null, 2)
+      );
+      return null;
     }
-
-    // 🧱 Normal binary file download
-    const res = await this.drive.files.get(
-      { fileId, alt: "media" },
-      { responseType: "stream" }
-    );
-
-    return res.data;
-  } catch (err: any) {
-    console.warn(
-      `⚠️ Failed to stream file ${fileId}:`,
-      JSON.stringify(err.response?.data || err.message, null, 2)
-    );
-    return null;
   }
-}
+  /**
+   * Finds and logs duplicate file and folder names in Drive (console-only version).
+   */
+  public async findDuplicate(): Promise<void> {
+    try {
+      console.log("\n🔍 Scanning Google Drive for duplicate names...");
 
+      const files: any[] = [];
+      let pageToken: string | undefined = undefined;
+
+      // Fetch all files (paginated)
+      do {
+        const res: any = await this.drive.files.list({
+          q: "trashed=false",
+          fields: "nextPageToken, files(id, name, mimeType, parents)",
+          pageSize: 1000,
+          pageToken,
+        });
+        files.push(...(res.data.files || []));
+        pageToken = res.data.nextPageToken || undefined;
+      } while (pageToken);
+
+      console.log(`\n📁 Total items scanned: ${files.length}`);
+
+      // Group by name
+      const nameMap: Record<string, any[]> = {};
+      for (const f of files) {
+        const name = f.name || "Untitled";
+        if (!nameMap[name]) nameMap[name] = [];
+        nameMap[name].push(f);
+      }
+
+      // Separate duplicates
+      const duplicateFiles = Object.entries(nameMap)
+        .filter(([_, arr]) => arr.length > 1)
+        .sort((a, b) => b[1].length - a[1].length);
+
+      if (duplicateFiles.length === 0) {
+        console.log("\n✅ No duplicate names found! Drive looks clean.\n");
+        return;
+      }
+
+      console.log(`\n⚠️ Found ${duplicateFiles.length} duplicate names:\n`);
+
+      // Print console output
+      for (const [name, items] of duplicateFiles) {
+        const type =
+          items[0].mimeType === "application/vnd.google-apps.folder"
+            ? "📁 Folder"
+            : "📄 File";
+
+        console.log(`${type} ${name} → (${items.length} duplicates)\n`);
+
+        items.forEach((f, i) => {
+          const id = f.id;
+          const parent = f.parents?.[0]
+            ? `Parent: ${f.parents[0]}`
+            : "Parent: None";
+          console.log(`   #${i + 1}  ID: ${id}  |  ${parent}`);
+        });
+
+        console.log("──────────────────────────────────────────────\n");
+      }
+
+      console.log("✨ Done! Duplicate analysis complete.\n");
+    } catch (err: any) {
+      console.error("❌ Error finding duplicates:", err.message || err);
+    }
+  }
 }
