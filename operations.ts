@@ -36,7 +36,6 @@ async function searchByNameHelper(
 
 /** ----------------  GetIdByNameHelper ---------------- **/
 
-
 /**
  * Generic helper to get ID by name with optional type filtering
  * @param name - Name to search for
@@ -164,7 +163,6 @@ export async function getFileInfo(fileId: string) {
 
 /** ----------------  Get image metadata for an image file ---------------- **/
 
-
 /**
  * Get image metadata for an image file
  * @param fileId - Google Drive file ID of the image
@@ -194,7 +192,6 @@ export async function getCompleteFileInfo(fileId: string) {
 
 /** ----------------  Move a file to a different folder ---------------- **/
 
-
 /**
  * Move file to a different folder
  * @param fileId - Google Drive file ID
@@ -211,7 +208,6 @@ export async function moveFile(fileId: string, newFolderId: string) {
     parents: [newFolderId],
   });
 }
-
 
 /** ----------------  Move a file by name to a different folder ---------------- **/
 
@@ -261,7 +257,6 @@ export async function copyFile(fileId: string, newName?: string) {
 
 /** ----------------  Create a new JSON file on Google Drive ---------------- **/
 
-
 /**
  * Create a new JSON file on Google Drive.
  * @param jsonContent - JSON object to store in the file.
@@ -270,7 +265,6 @@ export async function copyFile(fileId: string, newName?: string) {
 export async function createJsonFile(jsonContent: any, name: string) {
   return await driveService.createJsonFile(JSON.stringify(jsonContent), name);
 }
-
 
 /** ----------------  Select JSON content from a Google Drive file ---------------- **/
 
@@ -286,7 +280,6 @@ export async function selectJsonContent(fileId: string): Promise<any> {
     data,
   };
 }
-
 
 /** ----------------  Read JSON file content from Google Drive ---------------- **/
 
@@ -354,7 +347,6 @@ export async function addJsonKeyValue(fileId: string, key: string, value: any) {
     return { success: false, error: error.message };
   }
 }
-
 
 /** ----------------  Add a JSON object to a specified array path in a JSON file stored on Google Drive ---------------- **/
 
@@ -532,7 +524,6 @@ export async function createFolder(
 }
 
 /** ----------------  Delete a folder ---------------- **/
-
 
 /**
  * Delete a folder
@@ -849,7 +840,11 @@ export async function downloadMultipleFiles(
  * @param salt - Salt for key derivation
  * @returns Encrypted text
  */
-export async function encryptText(plainText: string, password: string, salt: string) {
+export async function encryptText(
+  plainText: string,
+  password: string,
+  salt: string
+) {
   return await driveService.encryptText(plainText, password, salt);
 }
 
@@ -862,11 +857,13 @@ export async function encryptText(plainText: string, password: string, salt: str
  * @param salt - Salt for key derivation
  * @returns Decrypted text
  */
-export async function decryptText(encryptedText: string, password: string, salt: string) {
+export async function decryptText(
+  encryptedText: string,
+  password: string,
+  salt: string
+) {
   return await driveService.decryptText(encryptedText, password, salt);
 }
-
-
 
 /** ----------------  Convert Files and Folders to Zip ---------------- **/
 
@@ -889,8 +886,31 @@ export async function findDuplicateFilesAndFolders(): Promise<void> {
   return await driveService.findDuplicate();
 }
 
-/** ----------------  Check if File Exists ---------------- **/
+/** ---------------- Get File Type Breakdown ---------------- **/
 
+/**
+ * Get file type breakdown for a folder
+ * @param parentId - Folder ID to analyze (default: 'root')
+ * @returns Object mapping file types to counts
+ */
+export async function getFileTypeBreakdown(
+  parentId: string = "root"
+): Promise<Record<string, number>> {
+  return await driveService.getFileTypeBreakdown(parentId);
+}
+
+/** ----------------  Get All Files in Parent ---------------- **/
+
+/**
+ * Get all files in a parent folder
+ * @param parentId - Folder ID to analyze (default: 'root')
+ * @returns Array of file objects
+ */
+export async function getAllFilesInParent(parentId: string): Promise<any> {
+  return await driveService.getAllFilesInParent(parentId);
+}
+
+/** ----------------  Check if File Exists ---------------- **/
 
 /**
  * Check if file exists by name
@@ -1137,9 +1157,6 @@ export async function convertDrawingToPdf(
   throw new Error(response.error || "Failed to convert Drawing → PDF");
 }
 
-/** ----------------  ---------------- **/
-
-
 // ============================================
 // Export all operations
 // ============================================
@@ -1211,6 +1228,8 @@ export const driveOperations = {
   // Utility operations
   filesAndFoldersToZip,
   findDuplicateFilesAndFolders,
+  getFileTypeBreakdown,
+  getAllFilesInParent,
   shareFile,
   fileExists,
   getStorageQuota,
