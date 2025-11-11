@@ -35,4 +35,20 @@ export const MIME_TYPES = {
   // Archives
   ZIP: 'application/zip',
   RAR: 'application/x-rar-compressed',
+  APPSCRIPT: 'application/vnd.google-apps.script',
 } as const;
+
+export const buildMimeLabels = (mimeTypes: Record<string, string>): Record<string, string> => {
+  const mapping: Record<string, string> = {};
+  Object.entries(mimeTypes).forEach(([key, value]) => {
+    // Format: "PDF" -> "Pdf", "GOOGLE_DOC" -> "Google Doc", "MP3_AUDIO" -> "Mp3 Audio"
+    const label = key
+      .replace(/_/g, " ")
+      .toLowerCase()
+      .replace(/(^\w|\s\w)/g, m => m.toUpperCase());
+    mapping[value] = label;
+  });
+  return mapping;
+};
+
+export const MIME_LABELS = buildMimeLabels(MIME_TYPES);

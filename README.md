@@ -170,6 +170,8 @@ main();
 | `decryptText()`                  | Decrypt encrypted text using AES-256-GCM with password-based key derivation |
 | `filesAndFoldersToZip()`         | Create a zip archive of folder and multiple files                           |
 | `findDuplicateFilesAndFolders()` | Find duplicate file and folder names in Drive                               |
+| `getFolderTypeBreakdown()`       | Get folder type breakdown (files, subfolders, etc.) in a parent folder      |
+| `getAllFilesInParent()`          | Get all files in a parent folder not including subfolders                   |
 | `shareFile()`                    | Share a file with a user                                                    |
 | `fileExists()`                   | Check if a file exists                                                      |
 | `getStorageQuota()`              | Get storage quota information                                               |
