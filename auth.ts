@@ -2,7 +2,14 @@ import { google } from "googleapis";
 import * as fs from "fs";
 import * as http from "http";
 import * as url from "url";
-import type { CredentialsFileParams, GoogleCredentials, WebCredentials, InstalledCredentials, TokenData } from "./types";
+import type {
+  CredentialsFileParams,
+  GoogleCredentials,
+  WebCredentials,
+  InstalledCredentials,
+  TokenData,
+} from "./types";
+import { SCOPES } from "./const";
 
 const CREDENTIALS_PATH = "./credentials.json";
 const TOKENS_PATH = "./tokens.json";
@@ -24,13 +31,20 @@ export async function generateCredentialsAndTokens({
         project_id: projectid!,
         auth_uri: "https://accounts.google.com/o/oauth2/auth",
         token_uri: "https://oauth2.googleapis.com/token",
-        auth_provider_x509_cert_url: "https://www.googleapis.com/oauth2/v1/certs",
+        auth_provider_x509_cert_url:
+          "https://www.googleapis.com/oauth2/v1/certs",
         client_secret: clientsecret!,
-        redirect_uris: redirecturis || ["http://localhost:3000/oauth2callback", "http://localhost:3000/oauth2/callback"],
+        redirect_uris: redirecturis || [
+          "http://localhost:3000/oauth2callback",
+          "http://localhost:3000/oauth2/callback",
+        ],
         javascript_origins: javascript_origin || ["http://localhost:3000"],
       },
     };
-    fs.writeFileSync(CREDENTIALS_PATH, JSON.stringify(baseCredentials, null, 2));
+    fs.writeFileSync(
+      CREDENTIALS_PATH,
+      JSON.stringify(baseCredentials, null, 2)
+    );
     console.log("✅ Created credentials.json");
   }
 
@@ -69,22 +83,19 @@ export async function generateCredentialsAndTokens({
   // =====================================
   // 4️⃣ START NEW AUTH FLOW
   // =====================================
-  const scopes = [
-    "https://www.googleapis.com/auth/drive",
-    "https://www.googleapis.com/auth/drive.file",
-  ];
 
   const authUrl = oauth2Client.generateAuthUrl({
     access_type: "offline",
-    scope: scopes,
     prompt: "consent",
+    include_granted_scopes: false, // 🔥 THIS IS THE MAIN FIX
+    scope: SCOPES,
   });
 
   console.log("\n🌐 Authorize this app by visiting this URL:\n", authUrl, "\n");
 
   return new Promise((resolve, reject) => {
     const connections = new Set<any>();
-    
+
     const server = http.createServer(async (req, res) => {
       try {
         if (req.url && req.url.includes("/oauth2callback")) {
@@ -108,7 +119,7 @@ export async function generateCredentialsAndTokens({
               </body>
             </html>
           `);
-          
+
           // Destroy all active connections and close the server
           connections.forEach((socket) => socket.destroy());
           server.close(() => {

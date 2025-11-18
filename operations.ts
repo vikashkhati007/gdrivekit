@@ -1182,6 +1182,47 @@ export function watchFolderDeepEvent(
   return driveService.watchFolderDeep(folderId, intervalMs, callback);
 }
 
+/** ---------------- Google Apps Script Management ---------------- **/
+
+/* CREATE */
+export async function createGoogleScript(title: string, code: string) {
+  const res = await driveService.createScriptProject(title, code);
+  if (res.success && res.data) return res.data;
+  throw new Error(res.error || "Failed to create Google Script");
+}
+
+/* UPDATE */
+export async function updateGoogleScript(scriptId: string, code: string) {
+  const res = await driveService.updateScriptProject(scriptId, code);
+  if (res.success) return res.data;
+  throw new Error(res.error || "Failed to update script");
+}
+
+/* RUN */
+
+/* DELETE (Move to Trash) */
+export async function deleteGoogleScript(scriptId: string) {
+  const res = await driveService.deleteScriptProject(scriptId);
+  if (res.success) return res.data;
+  throw new Error(res.error || "Failed to delete script");
+}
+
+/* OPTIONAL → AUTO DEPLOY */
+export async function deployGoogleScript(scriptId: string) {
+  try {
+    const res = await driveService.DeployScript(scriptId);
+
+    if (res.success && res.data) {
+      return res.data; // deploymentId + webAppUrl
+    }
+
+    throw new Error(res.error || "Failed to deploy script");
+  } catch (err: any) {
+    throw new Error("Auto Deploy Failed: " + (err.message || err));
+  }
+}
+
+
 // ============================================
 // Export all operations
 // ============================================
@@ -1278,5 +1319,12 @@ export const driveOperations = {
 
   //Watcher
   watchFolderEvent,
-  watchFolderDeepEvent
+  watchFolderDeepEvent,
+
+  //Google Apps Script Management
+  createGoogleScript,
+  updateGoogleScript,
+  deleteGoogleScript,
+  deployGoogleScript, // ✔ RIGHT – exact function name
+
 };
