@@ -214,6 +214,15 @@ main();
 
 ---
 
+### ⚞ **Folder Watcher**
+
+| Method              | Description                                                                                   |
+| ------------------- | --------------------------------------------------------------------------------------------- |
+| `watchFolder()`     | Ek single Google Drive folder ke andar hone wale **add / modify / delete** events detect kare |
+| `watchFolderDeep()` | Pure folder ke andar **subfolders tak** hone wale saare events ko detect kare (recursive)     |
+
+---
+
 ### 🧑‍💻 Author
 
 **Vikash Khati**

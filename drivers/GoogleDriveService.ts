@@ -1203,4 +1203,155 @@ export class GoogleDriveService {
     }
     return results;
   }
+
+ /**
+ * Watch a single Google Drive folder (NON-recursive)
+ * Detects file add / modify / delete
+ */
+public async watchFolder(
+  folderId: string,
+  intervalMs: number = 4000,
+  callback: (event: {
+    type: "added" | "modified" | "deleted";
+    file: FileMetadata;
+  }) => void
+) {
+  console.log(`👀 Watching folder: ${folderId}`);
+
+  let previousState: Record<string, FileMetadata> = {};
+
+  const fetchFiles = async () => {
+    const res = await this.drive.files.list({
+      q: `'${folderId}' in parents and trashed = false`,
+      fields: "files(id, name, mimeType, modifiedTime, size)",
+      pageSize: 1000,
+    });
+
+    const map: Record<string, FileMetadata> = {};
+    for (const f of res.data.files || []) {
+      map[f.id!] = f as FileMetadata;
+    }
+
+    return map;
+  };
+
+  previousState = await fetchFiles();
+
+  setInterval(async () => {
+    try {
+      const newState = await fetchFiles();
+
+      // ➕ Added
+      for (const id of Object.keys(newState)) {
+        if (!previousState[id]) {
+          callback({ type: "added", file: newState[id] });
+        }
+      }
+
+      // 🔄 Modified
+      for (const id of Object.keys(newState)) {
+        const oldFile = previousState[id];
+        const newFile = newState[id];
+        if (!oldFile) continue;
+
+        if (newFile.modifiedTime !== oldFile.modifiedTime) {
+          callback({ type: "modified", file: newFile });
+        }
+      }
+
+      // ❌ Deleted
+      for (const id of Object.keys(previousState)) {
+        if (!newState[id]) {
+          callback({ type: "deleted", file: previousState[id] });
+        }
+      }
+
+      previousState = newState;
+    } catch (err: any) {
+      console.log("⚠️ Watcher error:", err.message);
+    }
+  }, intervalMs);
+}
+
+
+/**
+ * Recursive folder watcher (subfolders included)
+ * Detects EVERYTHING happening inside the folder tree.
+ */
+public async watchFolderDeep(
+  folderId: string,
+  intervalMs: number = 4000,
+  callback: (event: {
+    type: "added" | "modified" | "deleted";
+    file: FileMetadata;
+  }) => void
+) {
+  console.log(`👁️ Watching folder recursively: ${folderId}`);
+
+  let previousState: Record<string, FileMetadata> = {};
+
+  // Fetch all files recursively
+  const fetchAll = async (id: string): Promise<Record<string, FileMetadata>> => {
+    let map: Record<string, FileMetadata> = {};
+
+    const res = await this.drive.files.list({
+      q: `'${id}' in parents and trashed = false`,
+      fields: "files(id, name, mimeType, modifiedTime, parents)",
+      pageSize: 1000,
+    });
+
+    const items = res.data.files || [];
+
+    for (const item of items) {
+      map[item.id!] = item as FileMetadata;
+
+      // If folder → dive deeper
+      if (item.mimeType === "application/vnd.google-apps.folder") {
+        const childMap = await fetchAll(item.id!);
+        map = { ...map, ...childMap };
+      }
+    }
+
+    return map;
+  };
+
+  previousState = await fetchAll(folderId);
+
+  setInterval(async () => {
+    try {
+      const newState = await fetchAll(folderId);
+
+      // ➕ Added
+      for (const id of Object.keys(newState)) {
+        if (!previousState[id]) {
+          callback({ type: "added", file: newState[id] });
+        }
+      }
+
+      // 🔄 Modified
+      for (const id of Object.keys(newState)) {
+        const oldFile = previousState[id];
+        const newFile = newState[id];
+        if (!oldFile) continue;
+
+        if (newFile.modifiedTime !== oldFile.modifiedTime) {
+          callback({ type: "modified", file: newFile });
+        }
+      }
+
+      // ❌ Deleted
+      for (const id of Object.keys(previousState)) {
+        if (!newState[id]) {
+          callback({ type: "deleted", file: previousState[id] });
+        }
+      }
+
+      previousState = newState;
+    } catch (err: any) {
+      console.log("⚠️ Recursive watcher error:", err.message);
+    }
+  }, intervalMs);
+}
+
+
 }

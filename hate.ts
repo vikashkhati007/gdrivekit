@@ -1,9 +1,16 @@
-import * as operations from './operations';
+import * as operations from "./operations";
 import { initDriveService } from "./drivers/services";
 
-async function main(){
-    initDriveService();
-    const fileTypeBreakdown = await operations.getAllFilesInParent("15RyBXGhSzh1dNFXror0YdCAaB4i3tBvg");
-    console.log(fileTypeBreakdown);
+async function main() {
+  initDriveService();
+  //   const data = await operations.searchByName("icon");
+  //   console.log(data)
+  operations.watchFolderEvent(
+    "1IAivwrXO6EKQdRJ1S30KOvjRnL0V7Trh",
+    3000,
+    (e) => {
+      console.log("Basic:", e.type, e.file.name);
+    }
+  );
 }
 main();
