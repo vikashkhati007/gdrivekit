@@ -223,6 +223,46 @@ main();
 
 ---
 
+### ⚞ **Google Apps Script Tools**
+
+| Method                 | Description                                                                                                                        |
+| ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| `createGoogleScript()` | Naya Google Apps Script project create karta hai, code upload karta hai, version banata hai aur execution ke liye deploy karta hai |
+| `updateGoogleScript()` | Existing Apps Script project ka code overwrite/update karta hai (future auto-version optional)                                     |
+| `deleteGoogleScript()` | Apps Script project ko Google Drive trash me move kar deta hai                                                                     |
+| `deployGoogleScript()` | Apps Script ka naya version execution API ke liye deploy karta hai (web app deploy nahi)                                           |
+
+
+## 🔑 Google Apps Script API Enable Karna (Required)
+
+### 1️⃣ Enable Apps Script API in Google Cloud Console
+
+Open this link (replace YOUR_PROJECT_ID if needed):
+
+👉 https://console.cloud.google.com/apis/library/script.googleapis.com?project=YOUR_PROJECT_ID
+
+Then:
+
+Click Enable
+
+Make sure the Apps Script API is active in your Cloud project
+
+### 2️⃣ Enable Apps Script API in Your Google Account
+
+Apps Script also requires user-level permission.
+
+Open:
+
+👉 https://script.google.com/home/usersettings
+
+Then turn ON:
+
+🔘 “Apps Script API”
+
+This MUST be enabled or script creation, updating, and deployment will fail.
+
+---
+
 ### 🧑‍💻 Author
 
 **Vikash Khati**
