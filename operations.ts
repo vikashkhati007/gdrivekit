@@ -1157,6 +1157,31 @@ export async function convertDrawingToPdf(
   throw new Error(response.error || "Failed to convert Drawing → PDF");
 }
 
+/** ---------------- Drive Change Watcher ---------------- **/
+
+export function watchFolderEvent(
+  folderId: string,
+  intervalMs: number = 2000,
+  callback: (event: {
+    type: "added" | "modified" | "deleted";
+    file: FileMetadata;
+  }) => void
+) {
+  return driveService.watchFolder(folderId, intervalMs, callback);
+}
+
+
+export function watchFolderDeepEvent(
+  folderId: string,
+  intervalMs: number = 2000,
+  callback: (event: {
+    type: "added" | "modified" | "deleted";
+    file: FileMetadata;
+  }) => void
+) {
+  return driveService.watchFolderDeep(folderId, intervalMs, callback);
+}
+
 // ============================================
 // Export all operations
 // ============================================
@@ -1250,4 +1275,8 @@ export const driveOperations = {
   convertPdfToDocs,
   convertDrawingToPng,
   convertDrawingToPdf,
+
+  //Watcher
+  watchFolderEvent,
+  watchFolderDeepEvent
 };
