@@ -1,16 +1,25 @@
-import * as operations from "./operations";
 import { initDriveService } from "./drivers/services";
+import {
+  createGoogleScript,
+  deployGoogleScript,
+} from "./operations";
 
 async function main() {
-  initDriveService();
-  //   const data = await operations.searchByName("icon");
-  //   console.log(data)
-  operations.watchFolderEvent(
-    "1IAivwrXO6EKQdRJ1S30KOvjRnL0V7Trh",
-    3000,
-    (e) => {
-      console.log("Basic:", e.type, e.file.name);
-    }
+  initDriveService(); // load credentials + tokens
+
+  // Step 1 → Create Script
+  const created = await createGoogleScript(
+    "MyScriptDemo",
+    `function hello(name) { return "Hello " + name; }`
   );
+
+  console.log("Created:", created);
+
+  // Step 2 → Deploy Script
+  const deployed = await deployGoogleScript(created.scriptId);
+  console.log("Deployed:", deployed);
+
+
 }
+
 main();

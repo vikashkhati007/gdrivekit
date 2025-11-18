@@ -25,9 +25,9 @@ import * as crypto from "crypto";
 export class GoogleDriveService {
   private oauth2Client: Auth.OAuth2Client;
   private drive: drive_v3.Drive;
+  script: any;
 
   constructor(credentials: GoogleCredentials) {
-    // Handle both web and installed app credential formats
     const creds = credentials.web || credentials.installed || credentials;
     const { client_id, client_secret } = creds;
     const redirect_uri =
@@ -42,6 +42,9 @@ export class GoogleDriveService {
     );
 
     this.drive = google.drive({ version: "v3", auth: this.oauth2Client });
+
+    // ⭐ ADD THIS (NECESSARY)
+    this.script = google.script({ version: "v1", auth: this.oauth2Client });
   }
 
   /**
@@ -1204,154 +1207,272 @@ export class GoogleDriveService {
     return results;
   }
 
- /**
- * Watch a single Google Drive folder (NON-recursive)
- * Detects file add / modify / delete
- */
-public async watchFolder(
-  folderId: string,
-  intervalMs: number = 4000,
-  callback: (event: {
-    type: "added" | "modified" | "deleted";
-    file: FileMetadata;
-  }) => void
-) {
-  console.log(`👀 Watching folder: ${folderId}`);
+  /**
+   * Watch a single Google Drive folder (NON-recursive)
+   * Detects file add / modify / delete
+   */
+  public async watchFolder(
+    folderId: string,
+    intervalMs: number = 4000,
+    callback: (event: {
+      type: "added" | "modified" | "deleted";
+      file: FileMetadata;
+    }) => void
+  ) {
+    console.log(`👀 Watching folder: ${folderId}`);
 
-  let previousState: Record<string, FileMetadata> = {};
+    let previousState: Record<string, FileMetadata> = {};
 
-  const fetchFiles = async () => {
-    const res = await this.drive.files.list({
-      q: `'${folderId}' in parents and trashed = false`,
-      fields: "files(id, name, mimeType, modifiedTime, size)",
-      pageSize: 1000,
-    });
+    const fetchFiles = async () => {
+      const res = await this.drive.files.list({
+        q: `'${folderId}' in parents and trashed = false`,
+        fields: "files(id, name, mimeType, modifiedTime, size)",
+        pageSize: 1000,
+      });
 
-    const map: Record<string, FileMetadata> = {};
-    for (const f of res.data.files || []) {
-      map[f.id!] = f as FileMetadata;
-    }
+      const map: Record<string, FileMetadata> = {};
+      for (const f of res.data.files || []) {
+        map[f.id!] = f as FileMetadata;
+      }
 
-    return map;
-  };
+      return map;
+    };
 
-  previousState = await fetchFiles();
+    previousState = await fetchFiles();
 
-  setInterval(async () => {
+    setInterval(async () => {
+      try {
+        const newState = await fetchFiles();
+
+        // ➕ Added
+        for (const id of Object.keys(newState)) {
+          if (!previousState[id]) {
+            callback({ type: "added", file: newState[id] });
+          }
+        }
+
+        // 🔄 Modified
+        for (const id of Object.keys(newState)) {
+          const oldFile = previousState[id];
+          const newFile = newState[id];
+          if (!oldFile) continue;
+
+          if (newFile.modifiedTime !== oldFile.modifiedTime) {
+            callback({ type: "modified", file: newFile });
+          }
+        }
+
+        // ❌ Deleted
+        for (const id of Object.keys(previousState)) {
+          if (!newState[id]) {
+            callback({ type: "deleted", file: previousState[id] });
+          }
+        }
+
+        previousState = newState;
+      } catch (err: any) {
+        console.log("⚠️ Watcher error:", err.message);
+      }
+    }, intervalMs);
+  }
+
+  /**
+   * Recursive folder watcher (subfolders included)
+   * Detects EVERYTHING happening inside the folder tree.
+   */
+  public async watchFolderDeep(
+    folderId: string,
+    intervalMs: number = 4000,
+    callback: (event: {
+      type: "added" | "modified" | "deleted";
+      file: FileMetadata;
+    }) => void
+  ) {
+    console.log(`👁️ Watching folder recursively: ${folderId}`);
+
+    let previousState: Record<string, FileMetadata> = {};
+
+    // Fetch all files recursively
+    const fetchAll = async (
+      id: string
+    ): Promise<Record<string, FileMetadata>> => {
+      let map: Record<string, FileMetadata> = {};
+
+      const res = await this.drive.files.list({
+        q: `'${id}' in parents and trashed = false`,
+        fields: "files(id, name, mimeType, modifiedTime, parents)",
+        pageSize: 1000,
+      });
+
+      const items = res.data.files || [];
+
+      for (const item of items) {
+        map[item.id!] = item as FileMetadata;
+
+        // If folder → dive deeper
+        if (item.mimeType === "application/vnd.google-apps.folder") {
+          const childMap = await fetchAll(item.id!);
+          map = { ...map, ...childMap };
+        }
+      }
+
+      return map;
+    };
+
+    previousState = await fetchAll(folderId);
+
+    setInterval(async () => {
+      try {
+        const newState = await fetchAll(folderId);
+
+        // ➕ Added
+        for (const id of Object.keys(newState)) {
+          if (!previousState[id]) {
+            callback({ type: "added", file: newState[id] });
+          }
+        }
+
+        // 🔄 Modified
+        for (const id of Object.keys(newState)) {
+          const oldFile = previousState[id];
+          const newFile = newState[id];
+          if (!oldFile) continue;
+
+          if (newFile.modifiedTime !== oldFile.modifiedTime) {
+            callback({ type: "modified", file: newFile });
+          }
+        }
+
+        // ❌ Deleted
+        for (const id of Object.keys(previousState)) {
+          if (!newState[id]) {
+            callback({ type: "deleted", file: previousState[id] });
+          }
+        }
+
+        previousState = newState;
+      } catch (err: any) {
+        console.log("⚠️ Recursive watcher error:", err.message);
+      }
+    }, intervalMs);
+  }
+
+  // Google Apps Script Management
+  public async createScriptProject(title: string, code: string) {
     try {
-      const newState = await fetchFiles();
+      // Create blank project
+      const project = await this.script.projects.create({
+        requestBody: { title },
+      });
 
-      // ➕ Added
-      for (const id of Object.keys(newState)) {
-        if (!previousState[id]) {
-          callback({ type: "added", file: newState[id] });
-        }
-      }
+      const scriptId = project.data.scriptId!;
 
-      // 🔄 Modified
-      for (const id of Object.keys(newState)) {
-        const oldFile = previousState[id];
-        const newFile = newState[id];
-        if (!oldFile) continue;
+      // Correct manifest
+      const manifest = {
+        timeZone: "Asia/Kolkata",
+        exceptionLogging: "STACKDRIVER",
+        runtimeVersion: "V8",
+        webapp: {
+          access: "ANYONE",
+          executeAs: "USER_DEPLOYING",
+        },
+      };
 
-        if (newFile.modifiedTime !== oldFile.modifiedTime) {
-          callback({ type: "modified", file: newFile });
-        }
-      }
+      const content = [
+        {
+          name: "appsscript",
+          type: "JSON",
+          source: JSON.stringify(manifest, null, 2),
+        },
+        {
+          name: "Code", // ⭐ Google accepts this ALWAYS
+          type: "SERVER_JS",
+          source: code,
+        },
+      ];
 
-      // ❌ Deleted
-      for (const id of Object.keys(previousState)) {
-        if (!newState[id]) {
-          callback({ type: "deleted", file: previousState[id] });
-        }
-      }
+      await this.script.projects.updateContent({
+        scriptId,
+        requestBody: { files: content },
+      });
 
-      previousState = newState;
+      return {
+        success: true,
+        data: { scriptId },
+      };
     } catch (err: any) {
-      console.log("⚠️ Watcher error:", err.message);
+      return { success: false, error: err.message };
     }
-  }, intervalMs);
-}
+  }
 
-
-/**
- * Recursive folder watcher (subfolders included)
- * Detects EVERYTHING happening inside the folder tree.
- */
-public async watchFolderDeep(
-  folderId: string,
-  intervalMs: number = 4000,
-  callback: (event: {
-    type: "added" | "modified" | "deleted";
-    file: FileMetadata;
-  }) => void
-) {
-  console.log(`👁️ Watching folder recursively: ${folderId}`);
-
-  let previousState: Record<string, FileMetadata> = {};
-
-  // Fetch all files recursively
-  const fetchAll = async (id: string): Promise<Record<string, FileMetadata>> => {
-    let map: Record<string, FileMetadata> = {};
-
-    const res = await this.drive.files.list({
-      q: `'${id}' in parents and trashed = false`,
-      fields: "files(id, name, mimeType, modifiedTime, parents)",
-      pageSize: 1000,
-    });
-
-    const items = res.data.files || [];
-
-    for (const item of items) {
-      map[item.id!] = item as FileMetadata;
-
-      // If folder → dive deeper
-      if (item.mimeType === "application/vnd.google-apps.folder") {
-        const childMap = await fetchAll(item.id!);
-        map = { ...map, ...childMap };
-      }
-    }
-
-    return map;
-  };
-
-  previousState = await fetchAll(folderId);
-
-  setInterval(async () => {
+  public async updateScriptProject(scriptId: string, code: string) {
     try {
-      const newState = await fetchAll(folderId);
+      const res = await this.script.projects.updateContent({
+        scriptId,
+        requestBody: {
+          files: [
+            {
+              name: "Code",
+              type: "SERVER_JS",
+              source: code,
+            },
+          ],
+        },
+      });
 
-      // ➕ Added
-      for (const id of Object.keys(newState)) {
-        if (!previousState[id]) {
-          callback({ type: "added", file: newState[id] });
-        }
-      }
-
-      // 🔄 Modified
-      for (const id of Object.keys(newState)) {
-        const oldFile = previousState[id];
-        const newFile = newState[id];
-        if (!oldFile) continue;
-
-        if (newFile.modifiedTime !== oldFile.modifiedTime) {
-          callback({ type: "modified", file: newFile });
-        }
-      }
-
-      // ❌ Deleted
-      for (const id of Object.keys(previousState)) {
-        if (!newState[id]) {
-          callback({ type: "deleted", file: previousState[id] });
-        }
-      }
-
-      previousState = newState;
+      return { success: true, data: res.data };
     } catch (err: any) {
-      console.log("⚠️ Recursive watcher error:", err.message);
+      return { success: false, error: err.message };
     }
-  }, intervalMs);
-}
+  }
 
+  public async deleteScriptProject(scriptId: string) {
+    try {
+      await this.drive.files.update({
+        fileId: scriptId,
+        requestBody: { trashed: true },
+      });
+      return { success: true, data: "Script moved to trash" };
+    } catch (err: any) {
+      return { success: false, error: err.message };
+    }
+  }
 
+  public async DeployScript(scriptId: string) {
+    try {
+      // Create version
+      const version = await this.script.projects.versions.create({
+        scriptId,
+        requestBody: {
+          description: "Auto version",
+        },
+      });
+
+      const versionNumber = version.data.versionNumber;
+
+      // Deploy using MANIFEST (Web app config already inside appsscript.json)
+      const deployment = await this.script.projects.deployments.create({
+        scriptId,
+        requestBody: {
+          versionNumber,
+          manifestFileName: "appsscript",
+        },
+      });
+
+      // Now extract the webApp URL
+      const webApp = deployment.data.entryPoints?.find(
+        (e: any) => e.entryPointType === "WEB_APP"
+      );
+
+      return {
+        success: true,
+        data: {
+          deploymentId: deployment.data.deploymentId,
+          webAppUrl: webApp?.webApp?.url,
+        },
+      };
+    } catch (err: any) {
+      return { success: false, error: err.message };
+    }
+  }
 }
